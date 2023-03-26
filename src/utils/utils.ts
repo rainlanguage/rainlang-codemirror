@@ -120,11 +120,11 @@ export function getCompletion(
                 apply: (view, _comp, from) => {
                     // re adjusting the cursor position for opcodes
                     const match = findMatch(context, label);
-                    let insert = label;
-                    if (match) insert = match.text;
+                    let insert = insertText ?? label;
+                    if (match) insert = (insertText ?? label).replace(match.text, "");
                     if (insertText?.endsWith("()")) {
-                        const cursorPos = from + insert.length + 1;
-                        // if (insertText.includes("<>")) cursorPos -= 2;
+                        let cursorPos = from + insert.length - 1;
+                        if (insertText.includes("<>")) cursorPos -= 2;
                         view.dispatch({
                             changes: { from, insert },
                             selection: { anchor: cursorPos, head: cursorPos }
