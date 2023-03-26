@@ -119,16 +119,19 @@ export function getCompletion(
                 detail,
                 apply: (view, _comp, from) => {
                     // re adjusting the cursor position for opcodes
+                    const match = findMatch(context, label);
+                    let insert = label;
+                    if (match) insert = match.text;
                     if (insertText?.endsWith("()")) {
-                        let cursorPos = from + insertText.length - 1;
+                        let cursorPos = from + insert.length - 1;
                         if (insertText.includes("<>")) cursorPos -= 2;
                         view.dispatch({
-                            changes: { from, insert: insertText },
+                            changes: { from, insert },
                             selection: { anchor: cursorPos, head: cursorPos }
                         });
                     }
                     else view.dispatch({
-                        changes: { from, insert: insertText ?? label }
+                        changes: { from, insert }
                     });
                 },
                 type: kind && CompletionItemKindMap[kind].toLowerCase(),
@@ -286,4 +289,20 @@ export function prefixMatch(completions: Completion[]) {
 
     const source = toSet(first) + toSet(rest) + "*$";
     return [new RegExp("^" + source), new RegExp(source)];
+}
+
+/**
+ * @public finds match before cursor for specific word
+ * 
+ * @param context - completion context
+ * @param str - the string to find match for
+ * @returns Matched item or null if not found any match
+ */
+export function findMatch(context: CompletionContext, str: string) {
+    for (let i = 0; i < str.length; i++) {
+        const match = context.matchBefore(new RegExp(str));
+        if (match) return match;
+        else str = str.slice(0, -1);
+    }
+    return null;
 }
