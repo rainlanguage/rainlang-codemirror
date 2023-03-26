@@ -1,10 +1,10 @@
-import { linter } from '@codemirror/lint';
-import { offsetToPos } from './utils/utils';
-import { Extension } from '@codemirror/state';
-import { autocompletion } from '@codemirror/autocomplete';
-import { ViewPlugin, hoverTooltip } from '@codemirror/view';
-import { RainSyntaxHighlighter } from './syntax/highlighter';
-import { RainLanguageServicesPlugin } from './services/languageServices';
+// import { linter } from "@codemirror/lint";
+import { offsetToPos } from "./utils/utils";
+import { Extension } from "@codemirror/state";
+import { autocompletion } from "@codemirror/autocomplete";
+import { ViewPlugin, hoverTooltip } from "@codemirror/view";
+import { RainSyntaxHighlighter } from "./syntax/highlighter";
+import { RainLanguageServicesPlugin } from "./services/languageServices";
 
 export { RainSyntaxHighlighter, RainLanguageServicesPlugin };
 
@@ -17,10 +17,10 @@ export type RainLanguageServicesOptions = {
      * Provides hover tooltips
      */
     hover?: boolean;
-    /**
-     * Provides diagnostics
-     */
-    diagnotics?: boolean;
+    // /**
+    //  * Provides diagnostics
+    //  */
+    // diagnotics?: boolean;
     /**
      * Provides code completion suggestions
      */
@@ -49,7 +49,7 @@ export class RainlangCodemirror {
         );
         if (!options) {
             this.extension.push(
-                linter(async(view) => await this.plugin?.handleDiagnostics(view) ?? []),
+                // linter(async(view) => await this.plugin?.handleDiagnostics(view) ?? []),
                 hoverTooltip(
                     (view, pos) => this.plugin?.handleHoverTooltip(
                         view,
@@ -70,9 +70,9 @@ export class RainlangCodemirror {
             );
         }
         else {
-            if (options?.diagnotics) this.extension.push(
-                linter(async(view) => await this.plugin?.handleDiagnostics(view) ?? []),
-            );
+            // if (options?.diagnotics) this.extension.push(
+            //     linter(async(view) => await this.plugin?.handleDiagnostics(view) ?? []),
+            // );
             if (options?.hover) this.extension.push(
                 hoverTooltip(
                     (view, pos) => this.plugin?.handleHoverTooltip(
@@ -90,9 +90,9 @@ export class RainlangCodemirror {
                                 context,
                                 offsetToPos(context.state.doc, context.pos)
                             );
-                        },
-                    ],
-                }),
+                        }
+                    ]
+                })
             );
         }
     }

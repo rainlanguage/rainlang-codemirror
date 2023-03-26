@@ -1,10 +1,10 @@
 // import { Facet } from '@codemirror/state';
-import { EditorView, Tooltip } from '@codemirror/view';
-import { Diagnostic, setDiagnostics } from '@codemirror/lint';
-import type { ViewUpdate, PluginValue } from '@codemirror/view';
-import { getCompletion, getDiagnostics, getHoverTooltip } from '../utils/utils';
-import { Position, RainDocument, TextDocument } from '@rainprotocol/rainlang/esm';
-import type { CompletionContext, CompletionResult } from '@codemirror/autocomplete';
+import { EditorView, Tooltip } from "@codemirror/view";
+import { setDiagnostics } from "@codemirror/lint";
+import type { ViewUpdate, PluginValue } from "@codemirror/view";
+import { getCompletion, getDiagnostics, getHoverTooltip } from "../utils/utils";
+import { Position, RainDocument, TextDocument } from "@rainprotocol/rainlang/esm";
+import type { CompletionContext, CompletionResult } from "@codemirror/autocomplete";
 
 
 // const useLast = (values: readonly any[]) => values.reduce((_, v) => v, '');
@@ -19,7 +19,7 @@ import type { CompletionContext, CompletionResult } from '@codemirror/autocomple
  * @see [LICENSE](./LICENSE) for license details.
  */ 
 export class RainLanguageServicesPlugin implements PluginValue {
-    public readonly uri = "file:///abcd.rain/";
+    public readonly uri = "file:///untitled.rain";
     public readonly languageId = "rainlang";
     public version = 0;
     private rainDocument: RainDocument;
@@ -46,9 +46,10 @@ export class RainLanguageServicesPlugin implements PluginValue {
             TextDocument.update(
                 this.textDocument,
                 [{ text: this.view.state.doc.toString() }],
-                1
+                ++this.version
             );
             this.rainDocument.update(this.textDocument);
+            this.processDiagnostics();
         }
     }
 
@@ -57,8 +58,7 @@ export class RainLanguageServicesPlugin implements PluginValue {
     // update opmeta for instance of RainDocument
     public async updateOpmeta(opmeta: Uint8Array | string) {
         this.rainDocument.update(undefined, opmeta);
-        const diagnostics = await this.handleDiagnostics(this.view);
-        this.view.dispatch(setDiagnostics(this.view.state, diagnostics));
+        this.processDiagnostics();
     }
 
     // handles calls for hover tooltip
@@ -91,13 +91,23 @@ export class RainLanguageServicesPlugin implements PluginValue {
 
 
     // handles calls for docuement diagnostics
-    public async handleDiagnostics(view: EditorView): Promise<Diagnostic[]> {
+    public async processDiagnostics() {
         try {
-            return getDiagnostics(view.state.doc, this.rainDocument);
+            const diagnostics = await getDiagnostics(
+                this.view.state.doc, 
+                this.rainDocument
+            );
+            this.view.dispatch(
+                setDiagnostics(this.view.state, diagnostics)
+            );
+            // return getDiagnostics(view.state.doc, this.rainDocument);
         }
         catch (err) {
             console.log(err);
-            return [];
+            this.view.dispatch(
+                setDiagnostics(this.view.state, [])
+            );
+            // return [];
         }
     }
 }

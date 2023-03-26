@@ -1,9 +1,9 @@
 {
     "name": "rainlang-codemirror",
-    "version": "0.0.0",
+    "version": "0.0.1",
     "license": "CAL-1.0",
     "author": "Rain Protocol",
-    "description": "Rain language implementation (language extention) for codemirror text editor",
+    "description": "Rain language implementation for codemirror text editor",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/rainprotocol/rainlang-codemirror.git"
@@ -12,6 +12,7 @@
        "url": "https://github.com/rainprotocol/rainlang-codemirror/issues"
     },
     "homepage": "https://github.com/rainprotocol/rainlang-codemirror#readme",
+    "type": "module",
     "main": "./dist/index.js",
     "typings": "./dist/index.d.ts",
     "files": [

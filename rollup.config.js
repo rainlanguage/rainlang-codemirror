@@ -1,30 +1,30 @@
-import ts from 'rollup-plugin-ts';
-// import babel from '@rollup/plugin-babel';
+import ts from "rollup-plugin-ts";
+// import babel from "@rollup/plugin-babel";
 import { lezer } from "@lezer/generator/rollup";
 
 export default {
-    input: 'src/index.ts',
+    input: "src/index.ts",
     output: {
-        dir: 'dist',
-        format: 'es'
+        dir: "dist",
+        format: "es"
     },
     plugins: [
         ts(),
         lezer(),
         // babel({
-        //     babelHelpers: 'bundled'
+        //     babelHelpers: "bundled"
         // })
     ],
     external: [
-        '@codemirror/autocomplete',
-        '@codemirror/lint',
-        '@codemirror/state',
-        '@codemirror/tooltip',
-        '@codemirror/view',
-        '@rainprotocol/rainlang/esm',
+        "@lezer/lr",
         "@lezer/highlight",
+        "@codemirror/view",
+        "@codemirror/lint",
+        "@codemirror/state",
+        "@codemirror/tooltip",
         "@codemirror/language",
-        "@lezer/lr"
+        "@codemirror/autocomplete",
+        "@rainprotocol/rainlang/esm",
     ]
 };
 
