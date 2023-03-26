@@ -119,10 +119,8 @@ export function getCompletion(
                 detail,
                 apply: (view, _comp) => {
                     // re adjusting the cursor position for opcodes
-                    const match = findMatch(context, label)!;
-                    console.log(label);
-                    // let insert = insertText ?? label;
-                    // if (match) insert = (insertText ?? label).replace(match.text, "");
+                    const matcher = prefixMatch([_comp]);
+                    const match = context.matchBefore(matcher[1])!;
                     if (insertText) {
                         let cursorPos = match.from + insertText.length - 1;
                         if (insertText.includes("<>")) cursorPos -= 2;
