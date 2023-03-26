@@ -276,8 +276,8 @@ export function prefixMatch(completions: Completion[]) {
     const first = new Set<string>();
     const rest = new Set<string>();
 
-    for (const { apply } of completions) {
-        const [initial, ...restStr] = apply as string;
+    for (const { label } of completions) {
+        const [initial, ...restStr] = label as string;
         first.add(initial);
         for (const char of restStr) {
             rest.add(char);
