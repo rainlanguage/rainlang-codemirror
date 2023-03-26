@@ -37,6 +37,7 @@ export class RainLanguageServicesPlugin implements PluginValue {
             this.textDocument,
             initOpMeta
         );
+        this.processDiagnostics();
     }
 
     // update the instance of TexTdocument and RainDocument
