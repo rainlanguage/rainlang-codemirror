@@ -123,8 +123,8 @@ export function getCompletion(
                     let insert = label;
                     if (match) insert = match.text;
                     if (insertText?.endsWith("()")) {
-                        let cursorPos = from + insert.length - 1;
-                        if (insertText.includes("<>")) cursorPos -= 2;
+                        const cursorPos = from + insert.length + 1;
+                        // if (insertText.includes("<>")) cursorPos -= 2;
                         view.dispatch({
                             changes: { from, insert },
                             selection: { anchor: cursorPos, head: cursorPos }
