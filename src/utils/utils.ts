@@ -117,21 +117,29 @@ export function getCompletion(
             } = {
                 label,
                 detail,
-                apply: (view, _comp, from) => {
+                apply: (view, _comp) => {
                     // re adjusting the cursor position for opcodes
-                    const match = findMatch(context, label);
-                    let insert = insertText ?? label;
-                    if (match) insert = (insertText ?? label).replace(match.text, "");
-                    if (insertText?.endsWith("()")) {
-                        let cursorPos = from + insert.length - 1;
+                    const match = findMatch(context, label)!;
+                    // let insert = insertText ?? label;
+                    // if (match) insert = (insertText ?? label).replace(match.text, "");
+                    if (insertText) {
+                        let cursorPos = match?.from + insertText.length - 1;
                         if (insertText.includes("<>")) cursorPos -= 2;
                         view.dispatch({
-                            changes: { from, insert },
+                            changes: { 
+                                from: match.from, 
+                                to: match.to, 
+                                insert: insertText 
+                            },
                             selection: { anchor: cursorPos, head: cursorPos }
                         });
                     }
                     else view.dispatch({
-                        changes: { from, insert }
+                        changes: { 
+                            from: match.from, 
+                            to: match.to, 
+                            insert: label 
+                        }
                     });
                 },
                 type: kind && CompletionItemKindMap[kind].toLowerCase(),
