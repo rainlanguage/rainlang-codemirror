@@ -120,10 +120,11 @@ export function getCompletion(
                 apply: (view, _comp) => {
                     // re adjusting the cursor position for opcodes
                     const match = findMatch(context, label)!;
+                    console.log(label);
                     // let insert = insertText ?? label;
                     // if (match) insert = (insertText ?? label).replace(match.text, "");
                     if (insertText) {
-                        let cursorPos = match?.from + insertText.length - 1;
+                        let cursorPos = match.from + insertText.length - 1;
                         if (insertText.includes("<>")) cursorPos -= 2;
                         view.dispatch({
                             changes: { 
@@ -307,7 +308,8 @@ export function prefixMatch(completions: Completion[]) {
  * @returns Matched item or null if not found any match
  */
 export function findMatch(context: CompletionContext, str: string) {
-    for (let i = 0; i < str.length; i++) {
+    const length = str.length;
+    for (let i = 0; i < length; i++) {
         const match = context.matchBefore(new RegExp(str));
         if (match) return match;
         else str = str.slice(0, -1);
