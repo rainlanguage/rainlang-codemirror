@@ -297,20 +297,3 @@ export function prefixMatch(completions: Completion[]) {
     const source = toSet(first) + toSet(rest) + "*$";
     return [new RegExp("^" + source), new RegExp(source)];
 }
-
-/**
- * @public finds match before cursor for specific word
- * 
- * @param context - completion context
- * @param str - the string to find match for
- * @returns Matched item or null if not found any match
- */
-export function findMatch(context: CompletionContext, str: string) {
-    const length = str.length;
-    for (let i = 0; i < length; i++) {
-        const match = context.matchBefore(new RegExp(str));
-        if (match) return match;
-        else str = str.slice(0, -1);
-    }
-    return null;
-}
