@@ -1,6 +1,6 @@
 {
     "name": "rainlang-codemirror",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "license": "CAL-1.0",
     "author": "Rain Protocol",
     "description": "Rain language implementation for codemirror text editor",
@@ -46,6 +46,6 @@
         "@codemirror/view": "^6.9.3",
         "@lezer/highlight": "^1.1.3",
         "@lezer/lr": "^1.3.3",
-        "@rainprotocol/rainlang": "github:rainprotocol/rainlang?29484fabd2a8b7c5be713d7d034c6c93034f8fc4"
+        "@rainprotocol/rainlang": "github:rainprotocol/rainlang?cc6382e69b725197f8e930fefa08a4d0ce736f1f"
     }
 }
