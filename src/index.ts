@@ -37,7 +37,7 @@ export const RainLanguageServicesFacet = Facet.define<
 /**
  * @public Options to choose language services 
  */
-export type RainLanguageServicesOptions = {
+export type RainLanguageConfig = {
     /**
      * Provides hover tooltips
      */
@@ -46,6 +46,10 @@ export type RainLanguageServicesOptions = {
      * Provides code completion suggestions
      */
     completion?: boolean;
+    /**
+     * Initial op meta to pass
+     */
+    initialOpMeta?: Uint8Array | string;
 } 
 
 /**
@@ -83,25 +87,24 @@ export class RainlangExtension {
 
     /**
      * @public Constructor of the RainlangCodemirror class
-     * @param initialOpMeta - Initial op meta
-     * @param options - options to for language services to include
+     * @param config - options to for language services to include
      */
-    constructor(initialOpMeta: Uint8Array | string = "", options?: RainLanguageServicesOptions) {
+    constructor(config?: RainLanguageConfig) {
         this.extension.push(
             RainLRLanguage,
             ViewPlugin.define(
-                view => this.plugin = new RainLanguageServicesPlugin(view, initialOpMeta)
+                view => this.plugin = new RainLanguageServicesPlugin(view, config?.initialOpMeta)
             )
         );
-        if (!options) this.extension.push(this.hover, this.completion);
+        if (!config) this.extension.push(this.hover, this.completion);
         else {
-            if (options?.hover) this.extension.push(this.hover);
-            if (options?.completion) this.extension.push(this.completion);
+            if (config?.hover) this.extension.push(this.hover);
+            if (config?.completion) this.extension.push(this.completion);
         }
     }
 
     /**
-     * @public Updates the op meta ofr this instance
+     * @public Updates the op meta of this instance
      * @param opmeta - The new op meta
      */
     public updateOpMeta(opmeta: Uint8Array | string) {
@@ -111,10 +114,12 @@ export class RainlangExtension {
 
 /**
  * @public provides Rainlang implementation for codemirror as LanguageSupport
- * This is the standard implementation of rainlang for codemirror and in order 
- * to update opmeta for it, it should be done through getting the plugin instance 
+ * This is the standard implementation of rainlang for codemirror. 
+ * 
+ * @example
+ * in order to update opmeta for it, it should be done through getting the plugin instance 
  * from the EditorView with providing it the result of getting the `RainLanguageServicesFacet` 
- * facet and then call updateOpMeta() for it:
+ * facet and then calling `updateOpMeta()` for it:
  * ```typescript
  * // get the `RainLanguageServicesFacet` value from editor view
  * const rainServicesViewPlugin = view.state.facet(RainLanguageServicesFacet);
@@ -126,17 +131,13 @@ export class RainlangExtension {
  * rainPlugin.updateOpMeta("0x123...")
  * ```
  * 
- * @param initialOpMeta - Initial op meta
- * @param options - options to for language services to include
+ * @param config - options to for language services to include
  * @returns rainlang LanguageSupport
  */
-export function rainlang(
-    initialOpMeta: Uint8Array | string = "", 
-    options?: RainLanguageServicesOptions
-): LanguageSupport {
+export function rainlang(config?: RainLanguageConfig): LanguageSupport {
     let plugin: RainLanguageServicesPlugin | undefined;
     const rainViewPlugin: ViewPlugin<RainLanguageServicesPlugin> = ViewPlugin.define(
-        view => plugin = new RainLanguageServicesPlugin(view, initialOpMeta)
+        view => plugin = new RainLanguageServicesPlugin(view, config?.initialOpMeta)
     );
     const services: Extension[] = [];
     const hover = hoverTooltip(
@@ -156,10 +157,10 @@ export function rainlang(
             },
         ],
     });
-    if (!options) services.push(hover, completion);
+    if (!config) services.push(hover, completion);
     else {
-        if (options?.hover) services.push(hover);
-        if (options?.completion) services.push(completion);
+        if (config?.hover) services.push(hover);
+        if (config?.completion) services.push(completion);
     }
     return new LanguageSupport(
         RainLRLanguage,
