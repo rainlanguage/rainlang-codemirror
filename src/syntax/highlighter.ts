@@ -6,7 +6,8 @@ import { LRLanguage, indentNodeProp, foldNodeProp, foldInside, delimitedIndent }
 /**
  * @public Rainlang syntax highlighter
  */
-export const RainSyntaxHighlighter = LRLanguage.define({
+export const RainLRLanguage = LRLanguage.define({
+    name: "rainlang",
     parser: parser.configure({
         props: [
             indentNodeProp.add({

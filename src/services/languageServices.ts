@@ -101,14 +101,12 @@ export class RainLanguageServicesPlugin implements PluginValue {
             this.view.dispatch(
                 setDiagnostics(this.view.state, diagnostics)
             );
-            // return getDiagnostics(view.state.doc, this.rainDocument);
         }
         catch (err) {
             console.log(err);
             this.view.dispatch(
                 setDiagnostics(this.view.state, [])
             );
-            // return [];
         }
     }
 }
