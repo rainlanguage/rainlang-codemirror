@@ -58,7 +58,7 @@ export type RainLanguageConfig = {
  * ```typescript
  * // instantiate the extension that can be directly used as codemirror extention
  * // it is instantiated so that opmeta can be updated easily
- * const rainlangExtension = new RainlangExtention("0x123...", options);
+ * const rainlangExtension = new RainlangExtention(options);
  *
  * // to update op meta
  * rainlangExtension.updateOpMeta("ox456...");
