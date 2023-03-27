@@ -2,10 +2,10 @@
 // and modified for converting language server protocol's lang features to codemirror
 // under BSD-3-Clause License, Copyright (c) 2021, Mahmud Ridwan, All rights reserved.
 
-import { Text } from '@codemirror/state';
-import { Tooltip } from '@codemirror/view';
-import { Diagnostic } from '@codemirror/lint';
-import { Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
+import { Text } from "@codemirror/state";
+import { Tooltip } from "@codemirror/view";
+import { Diagnostic } from "@codemirror/lint";
+import { Completion, CompletionContext, CompletionResult } from "@codemirror/autocomplete";
 import { 
     Position, 
     RainDocument, 
@@ -16,7 +16,7 @@ import {
     DiagnosticSeverity, 
     CompletionItemKind, 
     LanguageServiceParams 
-} from '@rainprotocol/rainlang/esm';
+} from "@rainprotocol/rainlang/esm";
 
 
 /**
@@ -48,8 +48,8 @@ export function getHoverTooltip(
         end = posToOffset(doc, range.end);
     }
     if (pos === null) return null;
-    const dom = document.createElement('div');
-    dom.classList.add('documentation');
+    const dom = document.createElement("div");
+    dom.classList.add("documentation");
     //if (this.allowHTMLContent) dom.innerHTML = formatContents(contents);
     //else 
     dom.textContent = (contents as MarkupContent).value;
@@ -113,11 +113,34 @@ export function getCompletion(
             const completion: Completion & {
                 filterText: string;
                 sortText?: string;
-                apply: string;
+                // apply: string;
             } = {
                 label,
                 detail,
-                apply: insertText ?? label,
+                apply: (view, _comp) => {
+                    // re adjusting the cursor position for opcodes
+                    const matcher = prefixMatch([_comp]);
+                    const match = context.matchBefore(matcher[1])!;
+                    if (insertText) {
+                        let cursorPos = match.from + insertText.length - 1;
+                        if (insertText.includes("<>")) cursorPos -= 2;
+                        view.dispatch({
+                            changes: { 
+                                from: match.from, 
+                                to: match.to, 
+                                insert: insertText 
+                            },
+                            selection: { anchor: cursorPos, head: cursorPos }
+                        });
+                    }
+                    else view.dispatch({
+                        changes: { 
+                            from: match.from, 
+                            to: match.to, 
+                            insert: label 
+                        }
+                    });
+                },
                 type: kind && CompletionItemKindMap[kind].toLowerCase(),
                 sortText: sortText ?? label,
                 filterText: filterText ?? label,
@@ -140,7 +163,7 @@ export function getCompletion(
                 .filter(({ filterText }) =>
                     filterText.toLowerCase().startsWith(word)
                 )
-                .sort(({ apply: a }, { apply: b }) => {
+                .sort(({ label: a }, { label: b }) => {
                     switch (true) {
                     case a.startsWith(token.text) && !b.startsWith(token.text):
                         return -1;
@@ -176,10 +199,10 @@ export async function getDiagnostics(
             from: posToOffset(doc, range.start)!,
             to: posToOffset(doc, range.end)!,
             severity: ({
-                [DiagnosticSeverity.Error]: 'error',
-                [DiagnosticSeverity.Warning]: 'warning',
-                [DiagnosticSeverity.Information]: 'info',
-                [DiagnosticSeverity.Hint]: 'info',
+                [DiagnosticSeverity.Error]: "error",
+                [DiagnosticSeverity.Warning]: "warning",
+                [DiagnosticSeverity.Information]: "info",
+                [DiagnosticSeverity.Hint]: "info",
             } as const)[severity!],
             message,
         }))
@@ -251,26 +274,26 @@ export function offsetToPos(doc: Text, offset: number) {
  */
 export function prefixMatch(completions: Completion[]) {
     function toSet(chars: Set<string>) {
-        let preamble = '';
-        let flat = Array.from(chars).join('');
+        let preamble = "";
+        let flat = Array.from(chars).join("");
         const words = /\w/.test(flat);
         if (words) {
-            preamble += '\\w';
-            flat = flat.replace(/\w/g, '');
+            preamble += "\\w";
+            flat = flat.replace(/\w/g, "");
         }
-        return `[${preamble}${flat.replace(/[^\w\s]/g, '\\$&')}]`;
+        return `[${preamble}${flat.replace(/[^\w\s]/g, "\\$&")}]`;
     }
     const first = new Set<string>();
     const rest = new Set<string>();
 
-    for (const { apply } of completions) {
-        const [initial, ...restStr] = apply as string;
+    for (const { label } of completions) {
+        const [initial, ...restStr] = label as string;
         first.add(initial);
         for (const char of restStr) {
             rest.add(char);
         }
     }
 
-    const source = toSet(first) + toSet(rest) + '*$';
-    return [new RegExp('^' + source), new RegExp(source)];
+    const source = toSet(first) + toSet(rest) + "*$";
+    return [new RegExp("^" + source), new RegExp(source)];
 }
