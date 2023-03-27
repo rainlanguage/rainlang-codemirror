@@ -109,7 +109,7 @@ export class RainLanguageServicesPlugin implements PluginValue {
         }
     }
 
-    // update opmeta for instance of RainDocument
+    // RainDocument getter
     public getRainDocument() {
         return this.rainDocument;
     }

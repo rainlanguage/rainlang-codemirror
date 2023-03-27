@@ -32,7 +32,7 @@ export type RainLanguageServicesOptions = {
  */
 export class RainlangCodemirror {
     private plugin: RainLanguageServicesPlugin | undefined;
-    public extension: Extension[] = [];
+    public extensions: Extension[] = [];
 
     /**
      * @public Constructor of the RainlangCodemirror class
@@ -40,7 +40,7 @@ export class RainlangCodemirror {
      * @param options - options to for language services to include
      */
     constructor(initialOpMeta: Uint8Array | string = "", options?: RainLanguageServicesOptions) {
-        this.extension.push(
+        this.extensions.push(
             RainSyntaxHighlighter,
             ViewPlugin.define((view) => {
                 this.plugin = new RainLanguageServicesPlugin(view, initialOpMeta);
@@ -48,7 +48,7 @@ export class RainlangCodemirror {
             })
         );
         if (!options) {
-            this.extension.push(
+            this.extensions.push(
                 // linter(async(view) => await this.plugin?.handleDiagnostics(view) ?? []),
                 hoverTooltip(
                     (view, pos) => this.plugin?.handleHoverTooltip(
@@ -73,7 +73,7 @@ export class RainlangCodemirror {
             // if (options?.diagnotics) this.extension.push(
             //     linter(async(view) => await this.plugin?.handleDiagnostics(view) ?? []),
             // );
-            if (options?.hover) this.extension.push(
+            if (options?.hover) this.extensions.push(
                 hoverTooltip(
                     (view, pos) => this.plugin?.handleHoverTooltip(
                         view,
@@ -81,7 +81,7 @@ export class RainlangCodemirror {
                     ) ?? null
                 ),
             );
-            if (options?.completion) this.extension.push(
+            if (options?.completion) this.extensions.push(
                 autocompletion({
                     override: [
                         async (context) => {
@@ -98,10 +98,17 @@ export class RainlangCodemirror {
     }
 
     /**
-     * @public Updates the op meta ofr this instance
+     * @public Updates the op meta of this instance
      * @param opmeta - The new op meta
      */
     public updateOpMeta(opmeta: Uint8Array | string) {
         if (this.plugin) this.plugin.updateOpmeta(opmeta);
+    }
+
+    /**
+     * @public Getter for the RainDocument of this instance
+     */
+    public getRainDocument() {
+        if (this.plugin) this.plugin.getRainDocument();
     }
 }
