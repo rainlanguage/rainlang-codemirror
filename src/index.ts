@@ -1,14 +1,13 @@
-import { offsetToPos, useLast } from "./utils/utils";
 import { Extension, Facet } from "@codemirror/state";
 import { RainLRLanguage } from "./syntax/highlighter";
 import { LanguageSupport } from "@codemirror/language";
 import { autocompletion } from "@codemirror/autocomplete";
 import { ViewPlugin, hoverTooltip } from "@codemirror/view";
+import { offsetToPos, useLast } from "./services/languageServices";
 import { RainLanguageServicesPlugin } from "./services/languageServices";
 
-export * from "./utils/utils";
 export * from "./services/languageServices";
-export { RainLRLanguage, RainLanguageServicesPlugin };
+export { RainLRLanguage };
 
 
 /**
@@ -35,7 +34,7 @@ export const RainLanguageServicesFacet = Facet.define<
 >({ combine: useLast });
 
 /**
- * @public Options to choose language services 
+ * @public Options to choose language services and define initial op meta
  */
 export type RainLanguageConfig = {
     /**
