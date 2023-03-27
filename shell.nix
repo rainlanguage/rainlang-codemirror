@@ -38,7 +38,7 @@ let
     '';
 
     lint = pkgs.writeShellScriptBin "lint" ''
-        yarn lint
+        npm run lint
     '';
 
     in
