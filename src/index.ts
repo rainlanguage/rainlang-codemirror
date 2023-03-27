@@ -1,10 +1,10 @@
 import { Extension, Facet } from "@codemirror/state";
 import { RainLRLanguage } from "./syntax/highlighter";
-import { LanguageSupport } from "@codemirror/language";
 import { autocompletion } from "@codemirror/autocomplete";
 import { ViewPlugin, hoverTooltip } from "@codemirror/view";
 import { offsetToPos, useLast } from "./services/languageServices";
 import { RainLanguageServicesPlugin } from "./services/languageServices";
+import { LanguageSupport, LanguageDescription } from "@codemirror/language";
 
 export * from "./services/languageServices";
 export { RainLRLanguage };
@@ -22,10 +22,10 @@ export { RainLRLanguage };
  * const rainViewPlugin = editorView.state.facet(RainLanguageServicesFacet);
  * 
  * // get the plugin instance
- * const plugin = editorView.plugin(rainViewPlugin);
+ * const rainPlugin = editorView.plugin(rainViewPlugin);
  * 
  * // update op meta from plugin
- * plugin.updateOpMeta("0x123...");
+ * rainPlugin.updateOpMeta("0x123...");
  * ```
  */
 export const RainLanguageServicesFacet = Facet.define<
@@ -121,10 +121,10 @@ export class RainlangExtension {
  * facet and then calling `updateOpMeta()` for it:
  * ```typescript
  * // get the `RainLanguageServicesFacet` value from editor view
- * const rainServicesViewPlugin = view.state.facet(RainLanguageServicesFacet);
+ * const rainViewPlugin = view.state.facet(RainLanguageServicesFacet);
  * 
  * // retrive the `RainLanguageServicesPlugin` instance
- * const rainPlugin = view.plugin(rainServicesViewPlugin);
+ * const rainPlugin = view.plugin(rainViewPlugin);
  * 
  * // update op meta
  * rainPlugin.updateOpMeta("0x123...")
@@ -170,3 +170,14 @@ export function rainlang(config?: RainLanguageConfig): LanguageSupport {
         ]
     );
 }
+
+/**
+ * @public Provides LanguageDescription class object for rainlang
+ */
+export const RainlangDescription = LanguageDescription.of({
+    name: "rainlang",
+    alias: [ "Rain Language", "Rainlang", "RainLang", "rain" ],
+    extensions: [ ".rain", ".rainlang", ".rl" ],
+    load: (config?: RainLanguageConfig) => Promise.resolve(rainlang(config)),
+    support: rainlang()
+});
