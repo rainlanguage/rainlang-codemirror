@@ -109,6 +109,6 @@ export class RainlangCodemirror {
      * @public Getter for the RainDocument of this instance
      */
     public getRainDocument() {
-        if (this.plugin) this.plugin.getRainDocument();
+        if (this.plugin) return this.plugin.getRainDocument();
     }
 }
