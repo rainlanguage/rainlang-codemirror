@@ -1,8 +1,8 @@
 # **Rain Language - Codemirror**
 The Rain language (aka rainlang) implementaion for codemirror, which works as a codemirror extension.
 This extention provides: 
-- Syntax highlightinh (written in lezer)
-- Diagnostics (through codemirror linter extension)
+- Syntax highlighting (written in lezer)
+- Diagnostics 
 - Completion (through codemirror autocomplete extension)
 - Hover (through codemirror hoverTooltip extension)
 

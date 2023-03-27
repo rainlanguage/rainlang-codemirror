@@ -297,3 +297,9 @@ export function prefixMatch(completions: Completion[]) {
     const source = toSet(first) + toSet(rest) + "*$";
     return [new RegExp("^" + source), new RegExp(source)];
 }
+
+/**
+ * @public Reduces an array to its last element
+ * @param values - Values to reduce
+ */
+export const useLast = (values: readonly any[]) => values.reduce((_, v) => v, '');
