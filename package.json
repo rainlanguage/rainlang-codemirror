@@ -13,17 +13,24 @@
     },
     "homepage": "https://github.com/rainprotocol/rainlang-codemirror#readme",
     "type": "module",
-    "main": "./dist/index.js",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
     "typings": "./dist/index.d.ts",
+    "exports": {
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+    },
     "files": [
-        "dist",
+        "dist/index.js",
+        "dist/index.cjs",
+        "dist/index.d.js",
         "src",
         "README.md",
         "package.json"
     ],
     "scripts": {
         "prepare": "npm run build",
-        "build": "rollup -c rollup.config.js",
+        "build": "rollup -c rollup.config.js && rm ./dist/index.d.cts",
         "lint": "eslint \"src/**\"",
         "test": "echo 'there is not test at the moment'"
     },
