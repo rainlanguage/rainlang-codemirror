@@ -23,14 +23,14 @@
     "files": [
         "dist/index.js",
         "dist/index.cjs",
-        "dist/index.d.js",
+        "dist/index.d.ts",
         "src",
         "README.md",
         "package.json"
     ],
     "scripts": {
         "prepare": "npm run build",
-        "build": "rollup -c rollup.config.js && rm ./dist/index.d.cts",
+        "build": "rollup -c rollup.config.js",
         "lint": "eslint \"src/**\"",
         "test": "echo 'there is not test at the moment'"
     },
