@@ -1,8 +1,6 @@
 import { Text } from "@codemirror/state";
-import { Diagnostic } from "@codemirror/lint";
-import { setDiagnostics } from "@codemirror/lint";
-import { EditorView, Tooltip } from "@codemirror/view";
-import { ViewUpdate, PluginValue } from "@codemirror/view";
+import { Diagnostic, setDiagnostics } from "@codemirror/lint";
+import { ViewUpdate, PluginValue, EditorView, Tooltip } from "@codemirror/view";
 import { CompletionContext, CompletionResult, Completion } from "@codemirror/autocomplete";
 import { 
     Position, 
@@ -15,7 +13,7 @@ import {
     DiagnosticSeverity, 
     CompletionItemKind, 
     LanguageServiceParams 
-} from "@rainprotocol/rainlang/esm";
+} from "@rainprotocol/rainlang";
 
 
 // const useLast = (values: readonly any[]) => values.reduce((_, v) => v, '');

@@ -1,6 +1,6 @@
 {
     "name": "rainlang-codemirror",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "license": "CAL-1.0",
     "author": "Rain Protocol",
     "description": "Rain language implementation for codemirror text editor",
@@ -9,21 +9,28 @@
         "url": "git+https://github.com/rainprotocol/rainlang-codemirror.git"
     },
     "bugs": {
-       "url": "https://github.com/rainprotocol/rainlang-codemirror/issues"
+        "url": "https://github.com/rainprotocol/rainlang-codemirror/issues"
     },
     "homepage": "https://github.com/rainprotocol/rainlang-codemirror#readme",
     "type": "module",
-    "main": "./dist/index.js",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
     "typings": "./dist/index.d.ts",
+    "exports": {
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+    },
     "files": [
-        "dist",
+        "dist/index.js",
+        "dist/index.cjs",
+        "dist/index.d.ts",
         "src",
         "README.md",
         "package.json"
     ],
     "scripts": {
         "prepare": "npm run build",
-        "build": "rollup -c rollup.config.js",
+        "build": "rollup -c rollup.config.js && rimraf ./dist/index.d.cts",
         "lint": "eslint \"src/**\"",
         "test": "echo 'there is not test at the moment'"
     },
@@ -35,6 +42,7 @@
         "@typescript-eslint/eslint-plugin": "^5.56.0",
         "@typescript-eslint/parser": "^5.56.0",
         "eslint": "^8.36.0",
+        "rimraf": "^4.4.1",
         "rollup": "^2.75.7",
         "rollup-plugin-ts": "^3.0.2",
         "typescript": "^4.7.4"

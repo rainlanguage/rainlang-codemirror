@@ -4,10 +4,10 @@ import { lezer } from "@lezer/generator/rollup";
 
 export default {
     input: "src/index.ts",
-    output: {
-        dir: "dist",
-        format: "es"
-    },
+    output: [
+        { file: "./dist/index.cjs", format: "cjs" },
+        { dir: "dist", format: "es" }
+    ],
     plugins: [
         ts(),
         lezer(),
@@ -24,7 +24,7 @@ export default {
         "@codemirror/tooltip",
         "@codemirror/language",
         "@codemirror/autocomplete",
-        "@rainprotocol/rainlang/esm",
+        "@rainprotocol/rainlang", 
     ]
 };
 
