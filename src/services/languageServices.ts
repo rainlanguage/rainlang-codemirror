@@ -13,7 +13,7 @@ import {
     DiagnosticSeverity, 
     CompletionItemKind, 
     LanguageServiceParams 
-} from "@rainprotocol/rainlang/esm";
+} from "@rainprotocol/rainlang";
 
 
 // const useLast = (values: readonly any[]) => values.reduce((_, v) => v, '');

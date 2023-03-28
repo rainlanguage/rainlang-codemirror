@@ -24,7 +24,7 @@ export default {
         "@codemirror/tooltip",
         "@codemirror/language",
         "@codemirror/autocomplete",
-        "@rainprotocol/rainlang/esm", 
+        "@rainprotocol/rainlang", 
     ]
 };
 
