@@ -54,6 +54,6 @@
         "@codemirror/view": "^6.9.3",
         "@lezer/highlight": "^1.1.3",
         "@lezer/lr": "^1.3.3",
-        "@rainprotocol/rainlang": "git+https://github.com/rainprotocol/rainlang#c1ccd54db174125acbfba7dbe28c9d79ae6cc643"
+        "@rainprotocol/rainlang": "git+https://github.com/rainprotocol/rainlang#d5b13a076b07a36f00acba7ebc20764cea1e61d7"
     }
 }
