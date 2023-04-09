@@ -13,5 +13,6 @@ node_modules
 
 # Generate output
 dist
+release-note.txt
 
 .DS_Store

@@ -1,5 +1,5 @@
 {
-    "name": "rainlang-codemirror",
+    "name": "codemirror-rainlang",
     "version": "0.0.5",
     "license": "CAL-1.0",
     "author": "Rain Protocol",
@@ -21,12 +21,9 @@
         "require": "./dist/index.cjs"
     },
     "files": [
-        "dist/index.js",
-        "dist/index.cjs",
-        "dist/index.d.ts",
-        "src",
-        "README.md",
-        "package.json"
+        "/dist",
+        "/src",
+        "/CHANGELOG.md"
     ],
     "scripts": {
         "prepare": "npm run build",
@@ -44,6 +41,7 @@
         "eslint": "^8.36.0",
         "rimraf": "^4.4.1",
         "rollup": "^2.75.7",
+        "rollup-plugin-license": "^3.0.1",
         "rollup-plugin-ts": "^3.0.2",
         "typescript": "^4.7.4"
     },
@@ -54,6 +52,6 @@
         "@codemirror/view": "^6.9.3",
         "@lezer/highlight": "^1.1.3",
         "@lezer/lr": "^1.3.3",
-        "@rainprotocol/rainlang": "git+https://github.com/rainprotocol/rainlang#d5b13a076b07a36f00acba7ebc20764cea1e61d7"
+        "@rainprotocol/rainlang": "^1.2.8"
     }
 }
