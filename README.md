@@ -17,16 +17,16 @@ If you find an issue or you want to propose an improvement, please feel free to 
 ## **Tutorial**
 To get started, install the package:
 ```bash
-yarn add 'rainprotocol/rainlang-codemirror.git'
+yarn add codemirror-rainlang
 
-npm install 'rainprotocol/rainlang-codemirror.git'
+npm install codemirror-rainlang
 ```
 <br>
 
 Then use `rainlang()` to get the `LanguageSupport` class object and use it as desired in editor:
 ```typescript
 // import
-import { rainlang, RainLanguageServicesFacet } from "rainprotocol/rainlang-codemirror";
+import { rainlang, RainLanguageServicesFacet } from "codemirror-rainlang";
 
 // get the `LanguageSupport` instance
 rainlang(config)
@@ -45,7 +45,7 @@ rainPlugin.updateOpMeta("0x1234..");
 Alternativley you can instantiate the `RainlangExtension` object and use it directly as an extension:
 ```typescript
 // import
-import { RainlangExtension } from "rainprotocol/rainlang-codemirror";
+import { RainlangExtension } from "codemirror-rainlang";
 
 // instantiate the rainlang extension, store it for updating op meta easily in future
 // `config` can be used to select specific language services to include/exclude
