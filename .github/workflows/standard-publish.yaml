@@ -21,9 +21,6 @@ jobs:
       - name: Checkout Repo
         id: checkout
         uses: actions/checkout@v3
-        # fetch all history for changelog to be generated correctly
-        with:
-          fetch-depth: 0
 
       # Install node
       - name: Install NodeJS v16
@@ -38,10 +35,7 @@ jobs:
       - name: Install Dependencies
         id: install
         if: steps.node.outcome == 'success'
-        # install auto-changelog library globally for generating changelog
-        run: | 
-          npm install --global auto-changelog
-          npm install
+        run: npm install
 
       # Build the package
       - name: Build
