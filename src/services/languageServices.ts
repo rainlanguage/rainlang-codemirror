@@ -17,22 +17,6 @@ import {
 } from "@rainprotocol/rainlang";
 
 
-/**
- * @public 
- * Options to instantiate RainLanguageServicesPlugin to provide initial meta 
- * related data, i.e. subgraphs URLs and meta hash/meta bytes pairs
- */
-export type RainLanguageServicesPluginOptions = {
-    /**
-     * Additional subgraph endpoint URLs
-     */
-    subgraphs?: string[];
-    /**
-     * Initial meta hash and meta bytes k/v pairs
-     */
-    metas?: { [hash: string]: string };
-}
-
 // const useLast = (values: readonly any[]) => values.reduce((_, v) => v, '');
 // const documentUri = Facet.define<string, string>({ combine: useLast });
 // const languageId = Facet.define<string, string>({ combine: useLast });
@@ -52,9 +36,13 @@ export class RainLanguageServicesPlugin implements PluginValue {
     private langServices: RainLanguageServices;
     private metaStore: MetaStore;
 
-    // constructor of the class
-    private constructor(private view: EditorView, metaStore: MetaStore) {
-        this.metaStore = metaStore;
+    /**
+     * @public constructor of the class
+     * @param view - The editor view instance
+     * @param metaStore - (optional) The meta store object to use
+     */
+    constructor(private view: EditorView, metaStore?: MetaStore) {
+        this.metaStore = metaStore ? metaStore : new MetaStore();
         this.textDocument = TextDocument.create(
             this.uri,
             this.languageId,
@@ -63,20 +51,6 @@ export class RainLanguageServicesPlugin implements PluginValue {
         );
         this.langServices = getRainLanguageServices({metaStore: this.metaStore});
         this.processDiagnostics();
-    }
-
-    /**
-     * @public Method to instantiate this class object
-     */
-    public static async create(
-        view: EditorView, 
-        options?: RainLanguageServicesPluginOptions
-    ): Promise<RainLanguageServicesPlugin> {
-        const metaStore = await MetaStore.create({
-            subgraphs: options?.subgraphs, 
-            initMetas: options?.metas
-        });
-        return new RainLanguageServicesPlugin(view, metaStore);
     }
 
     // update the instance of TexTdocument and RainDocument
@@ -99,7 +73,7 @@ export class RainLanguageServicesPlugin implements PluginValue {
      * Get the active meta store object of this plugin instance in order to manulay 
      * update it for example update the meta store subgraphs or add a new k/v meta
      */
-    public getMetaStore() {
+    public getMetaStore(): MetaStore {
         return this.metaStore;
     }
 
