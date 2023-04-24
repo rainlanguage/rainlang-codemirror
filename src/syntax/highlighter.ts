@@ -6,7 +6,7 @@ import { LRLanguage, indentNodeProp, foldNodeProp, foldInside, delimitedIndent }
 /**
  * @public Rainlang syntax highlighter
  */
-export const RainLRLanguage = LRLanguage.define({
+export const RainlangLR = LRLanguage.define({
     name: "rainlang",
     parser: parser.configure({
         props: [
@@ -26,7 +26,8 @@ export const RainLRLanguage = LRLanguage.define({
                 ParenClose: tags.keyword,
                 Assignment: tags.separator,
                 Comma: tags.punctuation,
-                Semi: tags.punctuation
+                Semi: tags.punctuation,
+                MetaHash: tags.meta
             }),
             foldNodeProp.add({
                 Expression: foldInside,
