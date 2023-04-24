@@ -1,6 +1,6 @@
 @precedence { first @right, second @left }
 
-@top Program { expression* }
+@top Program { expression* | MetaHash* }
 
 @skip { space | BlockComment }
 
@@ -33,6 +33,8 @@ OpcodeOpening {
 }
 
 @tokens {
+
+    MetaHash { "@0x" $[a-fA-F0-9]+ }
 
     Placeholder { "_" }
 
