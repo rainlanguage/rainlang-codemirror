@@ -420,4 +420,4 @@ export function prefixMatch(completions: Completion[]) {
  * @public Reduces an array to its last element
  * @param values - Values to reduce
  */
-export const useLast = (values: readonly any[]) => values.reduce((_, v) => v, '');
+export const useLast = (values: readonly any[]) => values.reduce((_, v) => v, "");

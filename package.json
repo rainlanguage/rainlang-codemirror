@@ -29,6 +29,7 @@
         "prepare": "npm run build",
         "build": "rollup -c rollup.config.js && rimraf ./dist/index.d.cts",
         "lint": "eslint \"src/**\"",
+        "lint-fix": "eslint \"src/**\" --fix",
         "test": "echo 'there is not test at the moment'"
     },
     "devDependencies": {

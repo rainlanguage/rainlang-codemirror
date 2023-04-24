@@ -41,6 +41,10 @@ let
         npm run lint
     '';
 
+    lint-fix = pkgs.writeShellScriptBin "lint-fix" ''
+        npm run lint-fix
+    '';
+
     in
     pkgs.stdenv.mkDerivation {
         name = "shell";
@@ -55,6 +59,7 @@ let
             flush
             flush-all
             lint
+            lint-fix
         ];
 
         shellHook = ''
