@@ -18,27 +18,27 @@ If you find an issue or you want to propose an improvement, please feel free to 
 To get started, install the package:
 ```bash
 yarn add codemirror-rainlang
-
+or
 npm install codemirror-rainlang
 ```
 <br>
 
-Then use `rainlang()` to get the `LanguageSupport` class object and use it as desired in editor:
+Then use `RainLanguage()` to get the `LanguageSupport` class object and use it as desired in editor:
 ```typescript
 // import
-import { rainlang, RainLanguageServicesFacet } from "codemirror-rainlang";
+import { RainLanguage, RainLanguageServicesFacet } from "codemirror-rainlang";
 
 // get the `LanguageSupport` instance
-rainlang(config)
+const rainlangSupport = RainLanguage(config)
 
-// for updating the opmeta firts get the facet value of `RainLanguageServicesFacet` which is of type `ViewPlugin`:
+// for getting the MetaStore instance firts get the facet value of `RainLanguageServicesFacet` which is of type `ViewPlugin`:
 const rainViewPlugin = editorView.state.facet(RainLanguageServicesFacet);
 
 // then retrive the instance of the `RainLanguageServicesPlugin` by:
 const rainPlugin = editorView.plugin(rainViewPlugin);
 
-// lastly call the `updateOpMeta()` method of the plugin instance to update op meta:
-rainPlugin.updateOpMeta("0x1234..");
+// lastly call the `getMetaStore()` method to get the MetaStore instance to interact with it manually:
+rainPlugin.getMetaStore("0x1234..");
 ```
 <br>
 
@@ -52,7 +52,7 @@ import { RainlangExtension } from "codemirror-rainlang";
 // this object can be used directly as an extension
 const rainlangExt = new RainlangExtension(config)
 
-// to update opmeta
+// to get the MetaStore instance to intract with it manually:
 rainlangExt.updateOpMeta(newOpMeta);
 ```
 <br>
