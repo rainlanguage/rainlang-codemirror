@@ -3,18 +3,35 @@ import { Diagnostic, setDiagnostics } from "@codemirror/lint";
 import { ViewUpdate, PluginValue, EditorView, Tooltip } from "@codemirror/view";
 import { CompletionContext, CompletionResult, Completion } from "@codemirror/autocomplete";
 import { 
+    Hover, 
     Position, 
+    MetaStore,
     TextDocument, 
-    RainDocument, 
-    getRainHover,
     MarkupContent, 
-    getRainCompletion, 
-    getRainDiagnostics, 
+    CompletionItem,
     DiagnosticSeverity, 
     CompletionItemKind, 
-    LanguageServiceParams 
+    RainLanguageServices,
+    getRainLanguageServices,
+    Diagnostic as lspDiagnostic 
 } from "@rainprotocol/rainlang";
 
+
+/**
+ * @public 
+ * Options to instantiate RainLanguageServicesPlugin to provide initial meta 
+ * related data, i.e. subgraphs URLs and meta hash/meta bytes pairs
+ */
+export type RainLanguageServicesPluginOptions = {
+    /**
+     * Additional subgraph endpoint URLs
+     */
+    subgraphs?: string[];
+    /**
+     * Initial meta hash and meta bytes k/v pairs
+     */
+    metas?: { [hash: string]: string };
+}
 
 // const useLast = (values: readonly any[]) => values.reduce((_, v) => v, '');
 // const documentUri = Facet.define<string, string>({ combine: useLast });
@@ -31,22 +48,35 @@ export class RainLanguageServicesPlugin implements PluginValue {
     public readonly uri = "file:///untitled.rain";
     public readonly languageId = "rainlang";
     public version = 0;
-    private rainDocument: RainDocument;
     private textDocument: TextDocument;
+    private langServices: RainLanguageServices;
+    private metaStore: MetaStore;
 
     // constructor of the class
-    constructor(private view: EditorView, initOpMeta: Uint8Array | string = "") {
+    private constructor(private view: EditorView, metaStore: MetaStore) {
+        this.metaStore = metaStore;
         this.textDocument = TextDocument.create(
             this.uri,
             this.languageId,
             this.version,
             this.view.state.doc.toString()
-        ),
-        this.rainDocument = new RainDocument(
-            this.textDocument,
-            initOpMeta
         );
+        this.langServices = getRainLanguageServices({metaStore: this.metaStore});
         this.processDiagnostics();
+    }
+
+    /**
+     * @public Method to instantiate this class object
+     */
+    public static async create(
+        view: EditorView, 
+        options?: RainLanguageServicesPluginOptions
+    ): Promise<RainLanguageServicesPlugin> {
+        const metaStore = await MetaStore.create({
+            subgraphs: options?.subgraphs, 
+            initMetas: options?.metas
+        });
+        return new RainLanguageServicesPlugin(view, metaStore);
     }
 
     // update the instance of TexTdocument and RainDocument
@@ -58,26 +88,39 @@ export class RainLanguageServicesPlugin implements PluginValue {
                 [{ text: this.view.state.doc.toString() }],
                 ++this.version
             );
-            this.rainDocument.update(this.textDocument);
             this.processDiagnostics();
         }
     }
 
     destroy() {}
 
-    // update opmeta for instance of RainDocument
-    public async updateOpmeta(opmeta: Uint8Array | string) {
-        this.rainDocument.update(undefined, opmeta);
-        this.processDiagnostics();
+    /** 
+     * @public 
+     * Get the active meta store object of this plugin instance in order to manulay 
+     * update it for example update the meta store subgraphs or add a new k/v meta
+     */
+    public getMetaStore() {
+        return this.metaStore;
     }
 
-    // handles calls for hover tooltip
+    /**
+     * @public Handles calls for hover tooltip
+     */
     public async handleHoverTooltip(
         view: EditorView,
         position: Position,
     ): Promise<Tooltip | null> {
         try {
-            return getHoverTooltip(view.state.doc, this.rainDocument, position);
+            const hover = await this.langServices.doHover(
+                this.textDocument,
+                position
+            );
+            if (!hover) return null;
+            else return getHoverTooltip(
+                view.state.doc, 
+                hover, 
+                position
+            );
         }
         catch (err) {
             console.log(err);
@@ -85,13 +128,23 @@ export class RainLanguageServicesPlugin implements PluginValue {
         }
     }
 
-    // handles calls for code completion
+    /**
+     * @public Handles calls for code completion
+     */
     public async handleCompletion(
         context: CompletionContext,
         position: Position,
     ): Promise<CompletionResult | null> {
         try {
-            return getCompletion(context, this.rainDocument, position);
+            const completions = await this.langServices.doComplete(
+                this.textDocument,
+                position
+            );
+            if (!completions) return null;
+            else return getCompletion(
+                context, 
+                completions
+            );
         }
         catch (err) {
             console.log(err);
@@ -100,15 +153,21 @@ export class RainLanguageServicesPlugin implements PluginValue {
     }
 
 
-    // handles calls for docuement diagnostics
+    /**
+     * @public Handles calls for docuement diagnostics
+     */
     public async processDiagnostics() {
         try {
-            const diagnostics = await getDiagnostics(
-                this.view.state.doc, 
-                this.rainDocument
-            );
             this.view.dispatch(
-                setDiagnostics(this.view.state, diagnostics)
+                setDiagnostics(
+                    this.view.state, 
+                    getDiagnostics(
+                        this.view.state.doc, 
+                        await this.langServices.doValidation(
+                            this.textDocument
+                        )
+                    )
+                )
             );
         }
         catch (err) {
@@ -121,27 +180,23 @@ export class RainLanguageServicesPlugin implements PluginValue {
 }
 
 /**
- * @public Provides codemirror hover tooltips.
+ * @public Converts LSP hover to codemirror hover tooltips.
  * Original code from [codemirror-languageserver](https://github.com/FurqanSoftware/codemirror-languageserver),
  * BSD-3-Clause License, Copyright (c) 2021, Mahmud Ridwan, All rights reserved.
  * 
  * @see [LICENSE](./LICENSE) for license details.
  * 
  * @param doc - Codemirror Text object
- * @param rainDocument - The RainDocument
+ * @param hover - The LSP hover item
  * @param position - Position of the textDocument to get the completion items for
- * @param setting - (optional) Language service params
  * @returns Codemirror tooltip or null
  */
 export function getHoverTooltip(
     doc: Text,
-    rainDocument: RainDocument,
+    hover: Hover,
     position: Position,
-    setting?: LanguageServiceParams
 ): Tooltip | null {
-    const result = getRainHover(rainDocument, position, setting);
-    if (!result) return null;
-    const { contents, range } = result;
+    const { contents, range } = hover;
     let pos = posToOffset(doc, position)!;
     let end;
     if (range) {
@@ -158,23 +213,19 @@ export function getHoverTooltip(
 }
 
 /**
- * @public Provides codemirror code completion items.
+ * @public Converts LSP CompletionItem to codemirror code completions.
  * Original code from [codemirror-languageserver](https://github.com/FurqanSoftware/codemirror-languageserver),
  * BSD-3-Clause License, Copyright (c) 2021, Mahmud Ridwan, All rights reserved.
  * 
  * @see [LICENSE](./LICENSE) for license details.
  * 
  * @param context - Completion context
- * @param rainDocument - The RainDocument
- * @param position - Position of the textDocument to get the completion items for
- * @param setting - (optional) Language service params
+ * @param completionItems - The LSP completion items
  * @returns Codemirror completion result or null
  */
 export function getCompletion(
     context: CompletionContext,
-    rainDocument: RainDocument,
-    position: Position,
-    setting?: LanguageServiceParams
+    completionItems: CompletionItem[]
 ): CompletionResult | null {
     const CompletionItemKindMap = Object.fromEntries(
         Object.entries(CompletionItemKind).map(([key, value]) => [value, key])
@@ -198,10 +249,7 @@ export function getCompletion(
         !context.matchBefore(/\w+$/)
     ) return null;
 
-    const result = getRainCompletion(rainDocument, position, setting);
-    if (!result) return null;
-
-    let completions = result.map(
+    let completions = completionItems.map(
         ({
             detail,
             label,
@@ -282,48 +330,43 @@ export function getCompletion(
 }
 
 /**
- * @public Provides codemirror diagnostics.
+ * @public Converts LSP Diagnostics to codemirror diagnostics.
  * Original code from [codemirror-languageserver](https://github.com/FurqanSoftware/codemirror-languageserver),
  * BSD-3-Clause License, Copyright (c) 2021, Mahmud Ridwan, All rights reserved.
  * 
  * @see [LICENSE](./LICENSE) for license details.
  * 
  * @param doc - Codemirror Text object
- * @param rainDocument - The RainDocument
+ * @param diagnostics - The LSP Diagnostics
  */
-export async function getDiagnostics(
+export function getDiagnostics(
     doc: Text,
-    rainDocument: RainDocument
-): Promise<Diagnostic[]> {
-    const diagnostics: Diagnostic[] = (await getRainDiagnostics(rainDocument))
-        .map(({ range, message, severity }) => ({
-            from: posToOffset(doc, range.start)!,
-            to: posToOffset(doc, range.end)!,
-            severity: ({
-                [DiagnosticSeverity.Error]: "error",
-                [DiagnosticSeverity.Warning]: "warning",
-                [DiagnosticSeverity.Information]: "info",
-                [DiagnosticSeverity.Hint]: "info",
-            } as const)[severity!],
-            message,
-        }))
-        .filter(
-            ({ from, to }) => 
-                from !== null && 
-                to !== null && 
-                from !== undefined && 
-                to !== undefined
-        )
-        .sort((a, b) => {
-            switch (true) {
-            case a.from < b.from:
-                return -1;
-            case a.from > b.from:
-                return 1;
-            }
-            return 0;
-        });
-    return diagnostics;
+    diagnostics: lspDiagnostic[]
+): Diagnostic[] {
+    return diagnostics.map(({ range, message, severity }) => ({
+        message,
+        from: posToOffset(doc, range.start)!,
+        to: posToOffset(doc, range.end)!,
+        severity: ({
+            [DiagnosticSeverity.Error]: "error",
+            [DiagnosticSeverity.Warning]: "warning",
+            [DiagnosticSeverity.Information]: "info",
+            [DiagnosticSeverity.Hint]: "info",
+        } as const)[severity!]
+    })).filter(({ from, to }) => 
+        from !== null && 
+        to !== null && 
+        from !== undefined && 
+        to !== undefined
+    ).sort((a, b) => {
+        switch (true) {
+        case a.from < b.from:
+            return -1;
+        case a.from > b.from:
+            return 1;
+        }
+        return 0;
+    });
 }
 
 /**

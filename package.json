@@ -52,6 +52,6 @@
         "@codemirror/view": "^6.9.3",
         "@lezer/highlight": "^1.1.3",
         "@lezer/lr": "^1.3.3",
-        "@rainprotocol/rainlang": "^1.2.16"
+        "@rainprotocol/rainlang": "^2.0.1"
     }
 }

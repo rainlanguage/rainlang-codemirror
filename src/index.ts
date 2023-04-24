@@ -10,10 +10,13 @@ export { RainLRLanguage };
 
 
 /**
- * @public The facet used to store and retrive RainLanguageServicesPlugin instance from a EditorView.plugin()
- * after getting the facet value from the state associated with that EditoreView instance, so then can intract 
- * with the plugin directly to update op meta for example.
- * This combination is provided for `rainlang` LanguageSupport class objectand not for `RainlangExtention` class.
+ * @public The facet used to store and retrive RainLanguageServicesPlugin instance from a EditorView.plugin().
+ * By getting the facet value from the state associated with that EditoreView instance, you then can intract 
+ * with the plugin directly to get the MetaStore instance and update its subgraph and metas manually, however, 
+ * this is not recommended as the meta storage and management is handled automatically by every meta hash that
+ * is specified in an Rain document, so using this will not be needed in most of the cases unless some custom
+ * behavior is intended.
+ * This combination is provided for `rainlang` LanguageSupport class object and not for `RainlangExtention` class.
  * 
  * @example
  * ```typescript
@@ -24,7 +27,7 @@ export { RainLRLanguage };
  * const rainPlugin = editorView.plugin(rainViewPlugin);
  * 
  * // update op meta from plugin
- * rainPlugin.updateOpMeta("0x123...");
+ * rainPlugin.getMetaStore();
  * ```
  */
 export const RainLanguageServicesFacet = Facet.define<
@@ -45,9 +48,13 @@ export type RainLanguageConfig = {
      */
     completion?: boolean;
     /**
-     * Initial op meta to pass
+     * Additional subgraph endpoint URLs
      */
-    initialOpMeta?: Uint8Array | string;
+    subgraphs?: string[];
+    /**
+     * Initial meta hash and meta bytes k/v pairs
+     */
+    metas?: { [hash: string]: string };
 } 
 
 /**
@@ -55,11 +62,10 @@ export type RainLanguageConfig = {
  * @example
  * ```typescript
  * // instantiate the extension that can be directly used as codemirror extention
- * // it is instantiated so that opmeta can be updated easily
  * const rainlangExtension = new RainlangExtention(options);
  *
- * // to update op meta
- * rainlangExtension.updateOpMeta("ox456...");
+ * // to get the MetaStore instance of this extention instance
+ * rainlangExtension.getMetaStore();
  * ```
  */
 export class RainlangExtension {
@@ -91,7 +97,14 @@ export class RainlangExtension {
         this.extension.push(
             RainLRLanguage,
             ViewPlugin.define(
-                view => this.plugin = new RainLanguageServicesPlugin(view, config?.initialOpMeta)
+                async(view) => 
+                    this.plugin = await RainLanguageServicesPlugin.create(
+                        view, 
+                        {
+                            subgraphs: config?.subgraphs,
+                            metas: config?.metas
+                        }
+                    )
             )
         );
         if (!config) this.extension.push(this.hover, this.completion);
@@ -102,22 +115,29 @@ export class RainlangExtension {
     }
 
     /**
-     * @public Updates the op meta of this instance
-     * @param opmeta - The new op meta
+     * @public Get the MetaStore object instance in order to manualy update its subgraphs or metas
+     * Using this method is nor recommended as meta management is handled completely automatically 
+     * from specified meta hashes in a Rain document and doesn't need any manual interference unless 
+     * some custom behavior is intended.
      */
-    public updateOpMeta(opmeta: Uint8Array | string) {
-        if (this.plugin) this.plugin.updateOpmeta(opmeta);
+    public getMetaStore() {
+        if (this.plugin) return this.plugin.getMetaStore();
     }
 }
 
 /**
- * @public provides Rainlang implementation for codemirror as LanguageSupport
+ * @public 
+ * Provides Rainlang implementation for codemirror as LanguageSupport
  * This is the standard implementation of rainlang for codemirror. 
  * 
  * @example
- * in order to update opmeta for it, it should be done through getting the plugin instance 
+ * ```typescript
+ * const rainLanguageSupport = rainlang(config);
+ * ```
+ * in order to get the MetaStore instance, it should be done through getting the plugin instance 
  * from the EditorView with providing it the result of getting the `RainLanguageServicesFacet` 
- * facet and then calling `updateOpMeta()` for it:
+ * facet and then calling `getMetaStore()` for it, however this is nor recommended as meta management
+ * is done automatically from specified meta hashes in a Rain document:
  * ```typescript
  * // get the `RainLanguageServicesFacet` value from editor view
  * const rainViewPlugin = view.state.facet(RainLanguageServicesFacet);
@@ -125,8 +145,8 @@ export class RainlangExtension {
  * // retrive the `RainLanguageServicesPlugin` instance
  * const rainPlugin = view.plugin(rainViewPlugin);
  * 
- * // update op meta
- * rainPlugin.updateOpMeta("0x123...")
+ * // get the MetaStore instance
+ * rainPlugin.getMetaStore()
  * ```
  * 
  * @param config - options to for language services to include
@@ -135,7 +155,13 @@ export class RainlangExtension {
 export function rainlang(config?: RainLanguageConfig): LanguageSupport {
     let plugin: RainLanguageServicesPlugin | undefined;
     const rainViewPlugin: ViewPlugin<RainLanguageServicesPlugin> = ViewPlugin.define(
-        view => plugin = new RainLanguageServicesPlugin(view, config?.initialOpMeta)
+        async(view) => plugin = await RainLanguageServicesPlugin.create(
+            view, 
+            {
+                subgraphs: config?.subgraphs,
+                metas: config?.metas
+            }
+        )
     );
     const services: Extension[] = [];
     const hover = hoverTooltip(
