@@ -1,6 +1,6 @@
 {
     "name": "codemirror-rainlang",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "license": "CAL-1.0",
     "author": "Rain Protocol",
     "description": "Rain language implementation for codemirror text editor",
