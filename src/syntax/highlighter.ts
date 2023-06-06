@@ -28,7 +28,8 @@ export const RainlangLR = LRLanguage.define({
                 Comma: tags.punctuation,
                 Semi: tags.punctuation,
                 Import: tags.meta,
-                Binding: tags.string
+                Binding: tags.className,
+                Quote: tags.string
             }),
             foldNodeProp.add({
                 Expression: foldInside,

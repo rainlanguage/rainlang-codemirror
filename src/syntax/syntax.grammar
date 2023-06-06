@@ -13,6 +13,7 @@ expression {
     Number |
     Placeholder |
     VariableName  |
+    Quote |
     Expression { OpcodeOpening expression* ParenClose }
 
 }
@@ -33,6 +34,8 @@ OpcodeOpening {
 }
 
 @tokens {
+
+    Quote { "'" !![^ \t\n\r()<>:,]* }
 
     Binding { "#" ![^ \t\n\r()<>:,]* }
 
