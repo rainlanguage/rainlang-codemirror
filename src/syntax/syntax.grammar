@@ -1,6 +1,6 @@
 @precedence { first @right, second @left }
 
-@top Program { expression* | Import* | Binding* }
+@top Program { (expression | Import | Binding)* }
 
 @skip { space | BlockComment }
 
@@ -35,9 +35,9 @@ OpcodeOpening {
 
 @tokens {
 
-    Quote { "'" ![^ \t\n\r()<>:,]* }
+    Quote { "'" ![^ \t\n\r()<>:,;]* }
 
-    Binding { "#" ![^ \t\n\r()<>:,]* }
+    Binding { "#" ![^ \t\n\r()<>:,;]* }
 
     Import { "@0x" $[a-fA-F0-9]+ }
 
