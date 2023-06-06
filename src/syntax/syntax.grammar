@@ -1,6 +1,6 @@
 @precedence { first @right, second @left }
 
-@top Program { expression* | Import* | Binding* }
+@top Program { expression* Import* Binding* }
 
 @skip { space | BlockComment }
 
