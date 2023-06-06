@@ -1,6 +1,6 @@
 @precedence { first @right, second @left }
 
-@top Program { expression* | MetaHash* }
+@top Program { expression* | Import* | Binding* }
 
 @skip { space | BlockComment }
 
@@ -34,7 +34,9 @@ OpcodeOpening {
 
 @tokens {
 
-    MetaHash { "@0x" $[a-fA-F0-9]+ }
+    Binding { "#" $[^\s()<>:,]* }
+
+    Import { "@0x" $[a-fA-F0-9]+ }
 
     Placeholder { "_" }
 
@@ -49,7 +51,7 @@ OpcodeOpening {
     Number {
       @digit |
       "0x" $[a-fA-F0-9]+ |
-      "0b" $[01]+ |
+      "0b" $[0-1]+ |
       $[1-9] (@digit)* "e" (@digit)+
     }
 

@@ -1,10 +1,10 @@
-import { Extension, Facet } from "@codemirror/state";
 import { RainlangLR } from "./syntax/highlighter";
+import { MetaStore } from "@rainprotocol/rainlang";
+import { Extension, Facet } from "@codemirror/state";
 import { autocompletion } from "@codemirror/autocomplete";
 import { ViewPlugin, hoverTooltip } from "@codemirror/view";
 import { LanguageSupport, LanguageDescription } from "@codemirror/language";
 import { RainLanguageServicesPlugin, offsetToPos, useLast } from "./services/languageServices";
-import { MetaStore } from "@rainprotocol/rainlang";
 
 export * from "./services/languageServices";
 export { RainlangLR, MetaStore };
