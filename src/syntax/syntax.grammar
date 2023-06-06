@@ -34,7 +34,7 @@ OpcodeOpening {
 
 @tokens {
 
-    Binding { "#" $[^\s()<>:,]* }
+    Binding { "#" ![^ \t\n\r()<>:,]* }
 
     Import { "@0x" $[a-fA-F0-9]+ }
 
