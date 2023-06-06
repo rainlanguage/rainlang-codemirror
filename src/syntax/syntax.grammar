@@ -35,7 +35,7 @@ OpcodeOpening {
 
 @tokens {
 
-    Quote { "'" !![^ \t\n\r()<>:,]* }
+    Quote { "'" ![^ \t\n\r()<>:,]* }
 
     Binding { "#" ![^ \t\n\r()<>:,]* }
 
