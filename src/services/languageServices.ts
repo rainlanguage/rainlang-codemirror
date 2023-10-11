@@ -137,7 +137,7 @@ export class RainLanguageServicesPlugin implements PluginValue {
                     this.view.state, 
                     getDiagnostics(
                         this.view.state.doc, 
-                        await this.langServices.doValidation(
+                        await this.langServices.doValidate(
                             this.textDocument
                         )
                     )

@@ -126,7 +126,7 @@ export class RainlangExtension {
     ): Promise<RainlangExtension> {
         const metaStore = await MetaStore.create({
             subgraphs: config?.subgraphs,
-            initMetas: config?.metas
+            records: config?.metas
         });
         return new RainlangExtension(config?.services, metaStore);
     }
@@ -237,7 +237,7 @@ export const RainlangDescription = LanguageDescription.of({
     ) => {
         const metaStore = await MetaStore.create({
             subgraphs: config?.subgraphs,
-            initMetas: config?.metas
+            records: config?.metas
         });
         return Promise.resolve(RainLanguage(config?.services, metaStore));
     },
