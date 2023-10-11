@@ -22,6 +22,7 @@
         "/README.md"
     ],
     "scripts": {
+        "prepare": "npm run build",
         "build": "rollup -c rollup.config.js && rimraf ./dist/index.d.cts",
         "lint": "eslint \"src/**\"",
         "lint-fix": "eslint \"src/**\" --fix",
