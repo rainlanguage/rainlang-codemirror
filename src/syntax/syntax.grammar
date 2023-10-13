@@ -39,7 +39,7 @@ OpcodeOpening {
 
     Binding { "#" ![^ \t\n\r()<>:,;]* }
 
-    Import { "@0x" $[a-fA-F0-9]+ }
+    Import { "@" $[ \t\n\r]* ((word) space)? "0x" $[a-fA-F0-9]+ }
 
     Placeholder { "_" }
 

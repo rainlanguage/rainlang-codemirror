@@ -4,9 +4,9 @@ import { Extension, Facet } from "@codemirror/state";
 import { autocompletion } from "@codemirror/autocomplete";
 import { ViewPlugin, hoverTooltip } from "@codemirror/view";
 import { LanguageSupport, LanguageDescription } from "@codemirror/language";
-import { RainLanguageServicesPlugin, offsetToPos, useLast } from "./services/languageServices";
+import { RainLanguageServicesPlugin, useLast } from "./services/languageServices";
 
-export * from "./services/languageServices";
+export * from "../src/services/languageServices";
 export { RainlangLR, MetaStore };
 
 
@@ -68,19 +68,13 @@ export class RainlangExtension {
     public extension: Extension[] = [];
     private plugin: RainLanguageServicesPlugin | undefined;
     private hover = hoverTooltip(
-        (view, pos) => this.plugin?.handleHoverTooltip(
-            view,
-            offsetToPos(view.state.doc, pos)
-        ) ?? null
+        (_view, pos) => this.plugin?.handleHoverTooltip(pos) ?? null
     );
     private completion = autocompletion({
         override: [
             async (context) => {
                 if (this.plugin == null) return null;
-                return await this.plugin?.handleCompletion(
-                    context,
-                    offsetToPos(context.state.doc, context.pos)
-                );
+                return await this.plugin?.handleCompletion(context);
             },
         ],
     });
@@ -126,7 +120,7 @@ export class RainlangExtension {
     ): Promise<RainlangExtension> {
         const metaStore = await MetaStore.create({
             subgraphs: config?.subgraphs,
-            initMetas: config?.metas
+            records: config?.metas
         });
         return new RainlangExtension(config?.services, metaStore);
     }
@@ -180,19 +174,13 @@ export function RainLanguage(
     );
     const services: Extension[] = [];
     const hover = hoverTooltip(
-        (view, pos) => plugin?.handleHoverTooltip(
-            view,
-            offsetToPos(view.state.doc, pos)
-        ) ?? null
+        (_view, pos) => plugin?.handleHoverTooltip(pos) ?? null
     );
     const completion = autocompletion({
         override: [
             async (context) => {
                 if (plugin == null) return null;
-                return await plugin?.handleCompletion(
-                    context,
-                    offsetToPos(context.state.doc, context.pos)
-                );
+                return await plugin?.handleCompletion(context);
             },
         ],
     });
@@ -218,7 +206,7 @@ export function RainLanguage(
 export const RainlangDescription = LanguageDescription.of({
     name: "rainlang",
     alias: [ "Rain Language", "Rainlang", "RainLang", "rain" ],
-    extensions: [ ".rain", ".rainlang", ".rl" ],
+    extensions: [ ".rain" ],
     load: async(
         config?: {
             /**
@@ -237,7 +225,7 @@ export const RainlangDescription = LanguageDescription.of({
     ) => {
         const metaStore = await MetaStore.create({
             subgraphs: config?.subgraphs,
-            initMetas: config?.metas
+            records: config?.metas
         });
         return Promise.resolve(RainLanguage(config?.services, metaStore));
     },
