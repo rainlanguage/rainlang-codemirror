@@ -1,10 +1,9 @@
-import { Text } from "@codemirror/state";
+import { Text, TransactionSpec } from "@codemirror/state";
 import { Diagnostic, setDiagnostics } from "@codemirror/lint";
 import { ViewUpdate, PluginValue, EditorView, Tooltip } from "@codemirror/view";
 import { CompletionContext, CompletionResult, Completion } from "@codemirror/autocomplete";
 import { 
     Hover, 
-    Position, 
     MetaStore,
     TextDocument, 
     MarkupContent, 
@@ -50,7 +49,9 @@ export class RainLanguageServicesPlugin implements PluginValue {
             this.view.state.doc.toString()
         );
         this.langServices = getRainLanguageServices({metaStore: this.metaStore});
-        this.processDiagnostics();
+        this.processDiagnostics(this.view.state.doc.toString(), this.version).then(
+            v => this.view.dispatch(v[0])
+        );
     }
 
     // update the instance of TexTdocument and RainDocument
@@ -62,7 +63,9 @@ export class RainLanguageServicesPlugin implements PluginValue {
                 [{ text: this.view.state.doc.toString() }],
                 ++this.version
             );
-            this.processDiagnostics();
+            this.processDiagnostics(this.view.state.doc.toString(), this.version).then(
+                v => v[1] === this.version ? this.view.dispatch(v[0]) : {}
+            );
         }
     }
 
@@ -80,21 +83,21 @@ export class RainLanguageServicesPlugin implements PluginValue {
     /**
      * @public Handles calls for hover tooltip
      */
-    public async handleHoverTooltip(
-        view: EditorView,
-        position: Position,
-    ): Promise<Tooltip | null> {
+    public async handleHoverTooltip(offset: number): Promise<Tooltip | null> {
         try {
             const hover = await this.langServices.doHover(
                 this.textDocument,
-                position
+                this.textDocument.positionAt(offset)
             );
             if (!hover) return null;
-            else return getHoverTooltip(
-                view.state.doc, 
-                hover, 
-                position
-            );
+            else {
+                let end;
+                if (hover.range) {
+                    offset = this.textDocument.offsetAt(hover.range.start);
+                    end = this.textDocument.offsetAt(hover.range.end);
+                }
+                return getHoverTooltip(hover, offset, end);
+            }
         }
         catch (err) {
             console.log(err);
@@ -105,14 +108,11 @@ export class RainLanguageServicesPlugin implements PluginValue {
     /**
      * @public Handles calls for code completion
      */
-    public async handleCompletion(
-        context: CompletionContext,
-        position: Position,
-    ): Promise<CompletionResult | null> {
+    public async handleCompletion(context: CompletionContext): Promise<CompletionResult | null> {
         try {
             const completions = await this.langServices.doComplete(
                 this.textDocument,
-                position
+                this.textDocument.positionAt(context.pos)
             );
             if (!completions) return null;
             else return getCompletion(
@@ -130,25 +130,25 @@ export class RainLanguageServicesPlugin implements PluginValue {
     /**
      * @public Handles calls for docuement diagnostics
      */
-    public async processDiagnostics() {
+    public async processDiagnostics(
+        text: string,
+        version: number
+    ): Promise<[TransactionSpec, number]> {
         try {
-            this.view.dispatch(
-                setDiagnostics(
-                    this.view.state, 
-                    getDiagnostics(
-                        this.view.state.doc, 
-                        await this.langServices.doValidate(
-                            this.textDocument
-                        )
-                    )
-                )
+            const _td = TextDocument.create("untitled", "rainlang", 0, text);
+            const diagnostics = getDiagnostics(
+                _td,
+                await this.langServices.doValidate(_td)
             );
+            return [setDiagnostics(this.view.state, diagnostics), version];
+            // this.view.dispatch(tx);
         }
         catch (err) {
             console.log(err);
-            this.view.dispatch(
-                setDiagnostics(this.view.state, [])
-            );
+            return [setDiagnostics(this.view.state, []), version];
+            // this.view.dispatch(
+            //     setDiagnostics(this.view.state, [])
+            // );
         }
     }
 }
@@ -160,23 +160,25 @@ export class RainLanguageServicesPlugin implements PluginValue {
  * 
  * @see [LICENSE](./LICENSE) for license details.
  * 
- * @param doc - Codemirror Text object
  * @param hover - The LSP hover item
- * @param position - Position of the textDocument to get the completion items for
+ * @param pos - Offset of the textDocument to get the completion items for
+ * @param end - The end offset of the requested hiver item
  * @returns Codemirror tooltip or null
  */
 export function getHoverTooltip(
-    doc: Text,
     hover: Hover,
-    position: Position,
+    pos: number,
+    end?: number
 ): Tooltip | null {
-    const { contents, range } = hover;
-    let pos = posToOffset(doc, position)!;
-    let end;
-    if (range) {
-        pos = posToOffset(doc, range.start)!;
-        end = posToOffset(doc, range.end);
-    }
+    const { contents } = hover;
+    // let pos = posToOffset(doc, position)!;
+    // let end;
+    // if (range) {
+    //     // pos = posToOffset(doc, range.start)!;
+    //     // end = posToOffset(doc, range.end);
+    //     pos = textDocument.offsetAt(range.start);
+    //     end = textDocument.offsetAt(range.end);
+    // }
     if (pos === null) return null;
     const dom = document.createElement("div");
     dom.classList.add("documentation");
@@ -310,17 +312,19 @@ export function getCompletion(
  * 
  * @see [LICENSE](./LICENSE) for license details.
  * 
- * @param doc - Codemirror Text object
+ * @param textDocument - The text document object
  * @param diagnostics - The LSP Diagnostics
  */
 export function getDiagnostics(
-    doc: Text,
+    textDocument: TextDocument,
     diagnostics: lspDiagnostic[]
 ): Diagnostic[] {
     return diagnostics.map(({ range, message, severity }) => ({
         message,
-        from: posToOffset(doc, range.start)!,
-        to: posToOffset(doc, range.end)!,
+        // from: posToOffset(doc, range.start)!,
+        // to: posToOffset(doc, range.end)!,
+        from: textDocument.offsetAt(range.start),
+        to: textDocument.offsetAt(range.end),
         severity: ({
             [DiagnosticSeverity.Error]: "error",
             [DiagnosticSeverity.Warning]: "warning",
@@ -355,9 +359,9 @@ export function getDiagnostics(
  * @returns - The offset of the provided position
  */
 export function posToOffset(doc: Text, pos: { line: number; character: number }) {
-    if (pos.line >= doc.lines) return;
+    if (pos.line >= doc.lines) return doc.length;
     const offset = doc.line(pos.line + 1).from + pos.character;
-    if (offset > doc.length) return;
+    if (offset > doc.length) return doc.length;
     return offset;
 }
 

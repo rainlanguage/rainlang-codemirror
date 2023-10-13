@@ -14,5 +14,6 @@ node_modules
 # Generate output
 dist
 release-note.txt
+*.tgz
 
 .DS_Store
