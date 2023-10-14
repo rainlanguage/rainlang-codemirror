@@ -48,7 +48,10 @@ export class RainLanguageServicesPlugin implements PluginValue {
             this.version,
             this.view.state.doc.toString()
         );
-        this.langServices = getRainLanguageServices({metaStore: this.metaStore});
+        this.langServices = getRainLanguageServices({
+            metaStore: this.metaStore, 
+            noMetaSearch: true
+        });
         this.processDiagnostics(this.view.state.doc.toString(), this.version).then(
             v => this.view.dispatch(v[0])
         );
@@ -222,7 +225,7 @@ export function getCompletion(
     // }
     if (
         // trigKind === CompletionTriggerKind.Invoked &&
-        !context.matchBefore(/\w+$/)
+        !context.matchBefore(/['\w-]+$/)
     ) return null;
 
     let completions = completionItems.map(
@@ -283,7 +286,7 @@ export function getCompletion(
     if (token) {
         pos = token.from;
         const word = token.text.toLowerCase();
-        if (/^\w+$/.test(word)) {
+        if (/^['\w-]+$/.test(word)) {
             completions = completions
                 .filter(({ filterText }) =>
                     filterText.toLowerCase().startsWith(word)
