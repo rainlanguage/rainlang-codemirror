@@ -1,5 +1,5 @@
+import { Meta } from "@rainprotocol/rainlang";
 import { RainlangLR } from "./syntax/highlighter";
-import { MetaStore } from "@rainprotocol/rainlang";
 import { Extension, Facet } from "@codemirror/state";
 import { autocompletion } from "@codemirror/autocomplete";
 import { ViewPlugin, hoverTooltip } from "@codemirror/view";
@@ -7,13 +7,13 @@ import { LanguageSupport, LanguageDescription } from "@codemirror/language";
 import { RainLanguageServicesPlugin, useLast } from "./services/languageServices";
 
 export * from "../src/services/languageServices";
-export { RainlangLR, MetaStore };
+export { RainlangLR, Meta };
 
 
 /**
  * @public The facet used to store and retrive RainLanguageServicesPlugin instance from a EditorView.plugin().
  * By getting the facet value from the state associated with that EditoreView instance, you then can intract 
- * with the plugin directly to get the MetaStore instance and update its subgraph and metas manually, however, 
+ * with the plugin directly to get the Meta.Store instance and update its subgraph and metas manually, however, 
  * this is not recommended as the meta storage and management is handled automatically by every meta hash that
  * is specified in an Rain document, so using this will not be needed in most of the cases unless some custom
  * behavior is intended.
@@ -60,7 +60,7 @@ export type LanguageServicesConfig = {
  * // instantiate the extension with initial meta data
  * const rainlangExtension = await RainlangExtension.create({services, subgraphs, metas})
  * 
- * // to get the MetaStore instance of this extension instance
+ * // to get the Meta.Store instance of this extension instance
  * rainlangExtension.getMetaStore();
  * ```
  */
@@ -83,7 +83,7 @@ export class RainlangExtension {
      * @public Constructor of the RainlangCodemirror class
      * @param config - Options for language services to include
      */
-    constructor(config?: LanguageServicesConfig, metaStore?: MetaStore) {
+    constructor(config?: LanguageServicesConfig, metaStore?: Meta.Store) {
         this.extension.push(
             RainlangLR,
             ViewPlugin.define(view => 
@@ -118,7 +118,7 @@ export class RainlangExtension {
             metas?: { [hash: string]: string };
         }
     ): Promise<RainlangExtension> {
-        const metaStore = await MetaStore.create({
+        const metaStore = await Meta.Store.create({
             subgraphs: config?.subgraphs,
             records: config?.metas
         });
@@ -126,7 +126,7 @@ export class RainlangExtension {
     }
 
     /**
-     * @public Get the MetaStore object instance in order to manualy update its subgraphs or metas
+     * @public Get the Meta.Store object instance in order to manualy update its subgraphs or metas
      * Using this method is not recommended as meta management is handled completely automatically 
      * from specified meta hashes in a Rain document and doesn't need any manual interference unless 
      * some custom behavior is intended.
@@ -145,7 +145,7 @@ export class RainlangExtension {
  * ```typescript
  * const rainLanguageSupport = RainLanguage(config);
  * ```
- * in order to get the MetaStore instance, it should be done through getting the plugin instance 
+ * in order to get the Meta.Store instance, it should be done through getting the plugin instance 
  * from the EditorView with providing it the result of getting the `RainLanguageServicesFacet` 
  * facet and then calling `getMetaStore()` for it, however this is not recommended as meta management
  * is done automatically from specified meta hashes in a Rain document:
@@ -156,7 +156,7 @@ export class RainlangExtension {
  * // retrive the `RainLanguageServicesPlugin` instance
  * const rainPlugin = view.plugin(rainViewPlugin);
  * 
- * // get the MetaStore instance
+ * // get the Meta.Store instance
  * rainPlugin.getMetaStore()
  * ```
  * 
@@ -166,7 +166,7 @@ export class RainlangExtension {
  */
 export function RainLanguage(
     config?: LanguageServicesConfig, 
-    metaStore?: MetaStore
+    metaStore?: Meta.Store
 ): LanguageSupport {
     let plugin: RainLanguageServicesPlugin | undefined;
     const rainViewPlugin: ViewPlugin<RainLanguageServicesPlugin> = ViewPlugin.define(
@@ -223,7 +223,7 @@ export const RainlangDescription = LanguageDescription.of({
             metas?: { [hash: string]: string };
         }
     ) => {
-        const metaStore = await MetaStore.create({
+        const metaStore = await Meta.Store.create({
             subgraphs: config?.subgraphs,
             records: config?.metas
         });
