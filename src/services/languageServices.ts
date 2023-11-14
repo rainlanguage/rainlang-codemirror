@@ -3,8 +3,8 @@ import { Diagnostic, setDiagnostics } from "@codemirror/lint";
 import { ViewUpdate, PluginValue, EditorView, Tooltip } from "@codemirror/view";
 import { CompletionContext, CompletionResult, Completion } from "@codemirror/autocomplete";
 import { 
+    Meta, 
     Hover, 
-    MetaStore,
     TextDocument, 
     MarkupContent, 
     CompletionItem,
@@ -33,15 +33,15 @@ export class RainLanguageServicesPlugin implements PluginValue {
     public version = 0;
     private textDocument: TextDocument;
     private langServices: RainLanguageServices;
-    private metaStore: MetaStore;
+    private metaStore: Meta.Store;
 
     /**
      * @public constructor of the class
      * @param view - The editor view instance
      * @param metaStore - (optional) The meta store object to use
      */
-    constructor(private view: EditorView, metaStore?: MetaStore) {
-        this.metaStore = metaStore ? metaStore : new MetaStore();
+    constructor(private view: EditorView, metaStore?: Meta.Store) {
+        this.metaStore = metaStore ? metaStore : new Meta.Store();
         this.textDocument = TextDocument.create(
             this.uri,
             this.languageId,
@@ -79,7 +79,7 @@ export class RainLanguageServicesPlugin implements PluginValue {
      * Get the active meta store object of this plugin instance in order to manulay 
      * update it for example update the meta store subgraphs or add a new k/v meta
      */
-    public getMetaStore(): MetaStore {
+    public getMetaStore(): Meta.Store {
         return this.metaStore;
     }
 
