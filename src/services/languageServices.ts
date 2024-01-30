@@ -1,20 +1,28 @@
 import { Text, TransactionSpec } from "@codemirror/state";
 import { Diagnostic, setDiagnostics } from "@codemirror/lint";
+import { TextDocument } from "vscode-languageserver-textdocument";
 import { ViewUpdate, PluginValue, EditorView, Tooltip } from "@codemirror/view";
 import { CompletionContext, CompletionResult, Completion } from "@codemirror/autocomplete";
 import { 
-    Meta, 
     Hover, 
-    TextDocument, 
+    MetaStore, 
     MarkupContent, 
     CompletionItem,
+    TextDocumentItem, 
     DiagnosticSeverity, 
     CompletionItemKind, 
     RainLanguageServices,
-    getRainLanguageServices,
     Diagnostic as lspDiagnostic 
-} from "@rainprotocol/rainlang";
+} from "@rainlanguage/dotrain";
 
+export function toTextDocumentItem(textDocument: TextDocument): TextDocumentItem {
+    return {
+        text: textDocument.getText(),
+        uri: textDocument.uri,
+        version: textDocument.version,
+        languageId: textDocument.languageId
+    };
+}
 
 // const useLast = (values: readonly any[]) => values.reduce((_, v) => v, '');
 // const documentUri = Facet.define<string, string>({ combine: useLast });
@@ -33,25 +41,22 @@ export class RainLanguageServicesPlugin implements PluginValue {
     public version = 0;
     private textDocument: TextDocument;
     private langServices: RainLanguageServices;
-    private metaStore: Meta.Store;
+    private metaStore: MetaStore;
 
     /**
      * @public constructor of the class
      * @param view - The editor view instance
      * @param metaStore - (optional) The meta store object to use
      */
-    constructor(private view: EditorView, metaStore?: Meta.Store) {
-        this.metaStore = metaStore ? metaStore : new Meta.Store();
+    constructor(private view: EditorView, metaStore?: MetaStore) {
+        this.metaStore = metaStore ? metaStore : new MetaStore(true);
         this.textDocument = TextDocument.create(
             this.uri,
             this.languageId,
             this.version,
             this.view.state.doc.toString()
         );
-        this.langServices = getRainLanguageServices({
-            metaStore: this.metaStore, 
-            noMetaSearch: true
-        });
+        this.langServices = new RainLanguageServices(this.metaStore);
         this.processDiagnostics(this.view.state.doc.toString(), this.version).then(
             v => this.view.dispatch(v[0])
         );
@@ -79,7 +84,7 @@ export class RainLanguageServicesPlugin implements PluginValue {
      * Get the active meta store object of this plugin instance in order to manulay 
      * update it for example update the meta store subgraphs or add a new k/v meta
      */
-    public getMetaStore(): Meta.Store {
+    public getMetaStore(): MetaStore {
         return this.metaStore;
     }
 
@@ -88,8 +93,8 @@ export class RainLanguageServicesPlugin implements PluginValue {
      */
     public async handleHoverTooltip(offset: number): Promise<Tooltip | null> {
         try {
-            const hover = await this.langServices.doHover(
-                this.textDocument,
+            const hover = this.langServices.doHover(
+                toTextDocumentItem(this.textDocument),
                 this.textDocument.positionAt(offset)
             );
             if (!hover) return null;
@@ -113,8 +118,8 @@ export class RainLanguageServicesPlugin implements PluginValue {
      */
     public async handleCompletion(context: CompletionContext): Promise<CompletionResult | null> {
         try {
-            const completions = await this.langServices.doComplete(
-                this.textDocument,
+            const completions = this.langServices.doComplete(
+                toTextDocumentItem(this.textDocument),
                 this.textDocument.positionAt(context.pos)
             );
             if (!completions) return null;
@@ -138,20 +143,16 @@ export class RainLanguageServicesPlugin implements PluginValue {
         version: number
     ): Promise<[TransactionSpec, number]> {
         try {
-            const _td = TextDocument.create("untitled", "rainlang", 0, text);
+            const _td = TextDocument.create("file:///temp.rain", "rainlang", 0, text);
             const diagnostics = getDiagnostics(
                 _td,
-                await this.langServices.doValidate(_td)
+                this.langServices.doValidate(toTextDocumentItem(_td), false)
             );
             return [setDiagnostics(this.view.state, diagnostics), version];
-            // this.view.dispatch(tx);
         }
         catch (err) {
             console.log(err);
             return [setDiagnostics(this.view.state, []), version];
-            // this.view.dispatch(
-            //     setDiagnostics(this.view.state, [])
-            // );
         }
     }
 }
@@ -174,14 +175,6 @@ export function getHoverTooltip(
     end?: number
 ): Tooltip | null {
     const { contents } = hover;
-    // let pos = posToOffset(doc, position)!;
-    // let end;
-    // if (range) {
-    //     // pos = posToOffset(doc, range.start)!;
-    //     // end = posToOffset(doc, range.end);
-    //     pos = textDocument.offsetAt(range.start);
-    //     end = textDocument.offsetAt(range.end);
-    // }
     if (pos === null) return null;
     const dom = document.createElement("div");
     dom.classList.add("documentation");
@@ -211,22 +204,7 @@ export function getCompletion(
     ) as Record<CompletionItemKind, string>;
 
     let { pos } = context;
-    // const line = state.doc.lineAt(pos);
-    // let trigKind: CompletionTriggerKind = CompletionTriggerKind.Invoked;
-    // let trigChar: string | undefined;
-    // if (
-    //     !explicit &&
-    //     plugin.client.capabilities?.completionProvider?.triggerCharacters?.includes(
-    //         line.text[pos - line.from - 1]
-    //     )
-    // ) {
-    //     trigKind = CompletionTriggerKind.TriggerCharacter;
-    //     trigChar = line.text[pos - line.from - 1];
-    // }
-    if (
-        // trigKind === CompletionTriggerKind.Invoked &&
-        !context.matchBefore(/['\w-]+$/)
-    ) return null;
+    if (!context.matchBefore(/['\w-]+$/)) return null;
 
     let completions = completionItems.map(
         ({
@@ -241,7 +219,6 @@ export function getCompletion(
             const completion: Completion & {
                 filterText: string;
                 sortText?: string;
-                // apply: string;
             } = {
                 label,
                 detail,
@@ -324,8 +301,6 @@ export function getDiagnostics(
 ): Diagnostic[] {
     return diagnostics.map(({ range, message, severity }) => ({
         message,
-        // from: posToOffset(doc, range.start)!,
-        // to: posToOffset(doc, range.end)!,
         from: textDocument.offsetAt(range.start),
         to: textDocument.offsetAt(range.end),
         severity: ({
