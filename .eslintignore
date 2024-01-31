@@ -10,3 +10,4 @@ op.meta.schema.json
 allStandardOpMeta.json
 LICENSE
 syntax.grammar
+/src/syntax/parser.*

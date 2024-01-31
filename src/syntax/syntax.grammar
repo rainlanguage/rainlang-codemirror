@@ -1,6 +1,6 @@
 @precedence { first @right, second @left }
 
-@top Program { (expression | Import | Binding)* }
+@top Program { FrontMatter? (expression | Import | Binding)* }
 
 @skip { space | BlockComment }
 
@@ -14,6 +14,7 @@ expression {
     Placeholder |
     VariableName  |
     Quote |
+    Pragma |
     Expression { OpcodeOpening expression* ParenClose }
 
 }
@@ -49,6 +50,12 @@ OpcodeOpening {
 
     OpcodeWithOperand { word AngleBracketOpen }
 
+    Pragma { "using-words-from" }
+
+    FrontMatter { !["]* FrontMatterSplitter }
+
+    FrontMatterSplitter { "---" }
+
     VariableName { word }
 
     Number {
@@ -73,6 +80,8 @@ OpcodeOpening {
     Assignment { ":" }
 
     space { $[ \t\n\r]+ }
+
+    @precedence { Pragma, VariableName }
 
     @precedence { Opcode, VariableName }
 

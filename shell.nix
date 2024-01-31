@@ -1,70 +1,77 @@
-let
-    pkgs = import
-        (builtins.fetchTarball {
-            name = "nixos-unstable-2022-09-26";
-            url = "https://github.com/nixos/nixpkgs/archive/b8e83fd7e16529ee331313993508c3bf918f1d57.tar.gz";
-            sha256 = "1a98pgnhdhyg66176i36rcn3rklihy36y9z4176la7pxlzm4khwf";
-        })
-        { };
+{
+  inputs = {
+    flake-utils.url = "github:numtide/flake-utils";
+    rainix.url = "github:rainprotocol/rainix";
+  };
 
-    local-test = pkgs.writeShellScriptBin "local-test" ''
-        npm run test
-    '';
+  outputs = { self, flake-utils, rainix }:
 
-    flush = pkgs.writeShellScriptBin "flush" ''
-        rm -rf dist
-    '';
+  flake-utils.lib.eachDefaultSystem (system:
+    let
+      pkgs = rainix.pkgs.${system};
+    in rec {
+      packages = {
+        build-bin = (pkgs.makeRustPlatform{
+          rustc = rainix.rust-toolchain.${system};
+          cargo = rainix.rust-toolchain.${system};
+        }).buildRustPackage {
+          src = ./.;
+          doCheck = false;
+          name = "dotrain";
+          cargoLock.lockFile = ./Cargo.lock;
+          # allows for git deps to be resolved without the need to specify their outputHash
+          cargoLock.allowBuiltinFetchGit = true;
+          buildPhase = ''
+            cargo build --release --bin dotrain --features cli
+          '';
+          installPhase = ''
+            mkdir -p $out/bin
+            cp target/release/dotrain $out/bin/
+          '';
+          buildInputs = with pkgs; [
+            openssl
+          ];
+          nativeBuildInputs = with pkgs; [
+            pkg-config
+          ] ++ lib.optionals stdenv.isDarwin [
+            darwin.apple_sdk.frameworks.SystemConfiguration
+          ];
+        };
+      } // rainix.packages.${system};
 
-    flush-all = pkgs.writeShellScriptBin "flush-all" ''
-        flush
-        rm -rf node_modules
-    '';
+      # # For `nix build` & `nix run`:
+      defaultPackage = packages.build-bin;
 
-    ci-test = pkgs.writeShellScriptBin "ci-test" ''
-        flush-all
-        npm install
-        build
-        local-test
-    '';
-
-    build = pkgs.writeShellScriptBin "build" ''
-        npm run build
-    '';
-
-    build-all = pkgs.writeShellScriptBin "build-all" ''
-        flush-all
-        npm install
-        build
-    '';
-
-    lint = pkgs.writeShellScriptBin "lint" ''
-        npm run lint
-    '';
-
-    lint-fix = pkgs.writeShellScriptBin "lint-fix" ''
-        npm run lint-fix
-    '';
-
-    in
-    pkgs.stdenv.mkDerivation {
-        name = "shell";
-        buildInputs = [
-            pkgs.nixpkgs-fmt
-            pkgs.yarn
-            pkgs.nodejs-16_x
-            build
-            build-all
-            local-test
-            ci-test
-            flush
-            flush-all
-            lint
-            lint-fix
-        ];
-
-        shellHook = ''
-            export PATH=$( npm bin ):$PATH
-            # keep it fresh
-            npm install
-        '';
+      # For `nix develop`:
+      devShells = {
+        js = pkgs.mkShell {
+          nativeBuildInputs = [
+            rainix.rust-toolchain.${system}
+            rainix.rust-build-inputs.${system}
+            rainix.node-build-inputs.${system}
+          ] ++ (with pkgs; [ 
+            wasm-bindgen-cli
+            (writeShellScriptBin "flush" ''
+              rm -rf dist
+              rm -rf docs
+              rm -rf temp
+            '')
+            (writeShellScriptBin "hard-flush" ''
+              rm -rf dist
+              rm -rf docs
+              rm -rf temp
+              rm -rf target
+              rm -rf node_modules
+            '')
+            (writeShellScriptBin "hard-build" ''
+              hard-flush
+              npm install
+              npm run build
+            '')
+          ]);
+          shellHook = '' npm install '';
+        };
+      } // rainix.devShells.${system};
     }
+  );
+}
