@@ -15,6 +15,8 @@
       devShells = {
         js = pkgs.mkShell {
           nativeBuildInputs = [
+            rainix.rust-toolchain.${system}
+            rainix.rust-build-inputs.${system}
             rainix.node-build-inputs.${system}
           ] ++ (with pkgs; [ 
             wasm-bindgen-cli

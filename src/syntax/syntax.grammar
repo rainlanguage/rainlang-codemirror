@@ -1,6 +1,6 @@
 @precedence { first @right, second @left }
 
-@top Program { FrontMatter? (expression | Import | Binding)* }
+@top Program { (expression | Import | Binding)* }
 
 @skip { space | BlockComment }
 
@@ -52,9 +52,9 @@ OpcodeOpening {
 
     Pragma { "using-words-from" }
 
-    FrontMatter { !["]* FrontMatterSplitter }
+    // FrontMatter { !["]* FrontMatterSplitter }
 
-    FrontMatterSplitter { "---" }
+    // FrontMatterSplitter { "---" }
 
     VariableName { word }
 
