@@ -10,45 +10,44 @@
     let
       pkgs = rainix.pkgs.${system};
     in rec {
-
-      build = rainix.mkTask.${system} {
-        name = "build";
-        body = ''
-          set -euxo pipefail
-          npm install
-          npm run build
-        '';
-        additionalBuildInputs = [
-          pkgs.wasm-bindgen-cli
-          rainix.rust-toolchain.${system}
-          rainix.rust-build-inputs.${system}
-          rainix.node-build-inputs.${system}
-        ];
-      };
-
-      test = rainix.mkTask.${system} {
-        name = "test";
-        body = ''
-          set -euxo pipefail
-          npm test
-        '';
-        additionalBuildInputs = [
-          rainix.node-build-inputs.${system}
-        ];
-      };
-
-      # For `nix develop`:
-      devShells = {
-        js = pkgs.mkShell {
-          nativeBuildInputs = [
+      packages = {
+        build = rainix.mkTask.${system} {
+          name = "build";
+          body = ''
+            set -euxo pipefail
+            npm install
+            npm run build
+          '';
+          additionalBuildInputs = [
+            pkgs.wasm-bindgen-cli
             rainix.rust-toolchain.${system}
             rainix.rust-build-inputs.${system}
             rainix.node-build-inputs.${system}
-          ] ++ (with pkgs; [ 
-            wasm-bindgen-cli
-          ]);
+          ];
         };
-      } // rainix.devShells.${system};
+
+        test = rainix.mkTask.${system} {
+          name = "test";
+          body = ''
+            set -euxo pipefail
+            npm test
+          '';
+          additionalBuildInputs = [
+            rainix.node-build-inputs.${system}
+          ];
+        };
+      };
+
+      # For `nix develop`:
+      devShell = pkgs.mkShell {
+        nativeBuildInputs = [
+          rainix.rust-toolchain.${system}
+          rainix.rust-build-inputs.${system}
+          rainix.node-build-inputs.${system}
+        ] ++ (with pkgs; [ 
+          wasm-bindgen-cli
+        ]);
+      };
     }
   );
 }
