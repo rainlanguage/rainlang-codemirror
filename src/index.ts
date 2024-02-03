@@ -73,7 +73,7 @@ export type LanguageServicesConfig = {
  */
 export class RainlangExtension {
     public extension: Extension[] = [];
-    private plugin: RainLanguageServicesPlugin | undefined;
+    public plugin: RainLanguageServicesPlugin | undefined;
     private hover = hoverTooltip(
         (_view, pos) => this.plugin?.handleHoverTooltip(pos) ?? null
     );
@@ -141,16 +141,6 @@ export class RainlangExtension {
             includeRainSubgraphs: config?.includeRainSubgraphs
         });
         return new RainlangExtension(config?.services, metaStore);
-    }
-
-    /**
-     * @public Get the Meta.Store object instance in order to manualy update its subgraphs or metas
-     * Using this method is not recommended as meta management is handled completely automatically 
-     * from specified meta hashes in a Rain document and doesn't need any manual interference unless 
-     * some custom behavior is intended.
-     */
-    public getMetaStore() {
-        if (this.plugin) return this.plugin.getMetaStore();
     }
 }
 
