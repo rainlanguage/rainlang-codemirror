@@ -5,16 +5,25 @@ import { ViewUpdate, PluginValue, EditorView, Tooltip } from "@codemirror/view";
 import { CompletionContext, CompletionResult, Completion } from "@codemirror/autocomplete";
 import { 
     Hover, 
+    Problem, 
     MetaStore, 
+    RainDocument, 
     MarkupContent, 
     CompletionItem,
-    TextDocumentItem, 
-    DiagnosticSeverity, 
+    TextDocumentItem,  
     CompletionItemKind, 
-    RainLanguageServices,
-    Diagnostic as lspDiagnostic 
+    RainLanguageServices 
 } from "@rainlanguage/dotrain";
 
+
+/**
+ * @public A function for calling the native parser and get back its errors as Problems
+ */
+export type ForkCallback = (dotrain: RainDocument) => Promise<Problem[]>;
+
+/**
+ * @public Converts TextDocument to TextDocumentItem
+ */
 export function toTextDocumentItem(textDocument: TextDocument): TextDocumentItem {
     return {
         text: textDocument.getText(),
@@ -47,8 +56,15 @@ export class RainLanguageServicesPlugin implements PluginValue {
      * @public constructor of the class
      * @param view - The editor view instance
      * @param metaStore - (optional) The meta store object to use
+     * @param callback - (optional) The callback to run fork calls on native parser,
+     * this will be called everytime there are no active diagnostics, so as a result, 
+     * errors from calling onchain parser will be shown as diagnostics
      */
-    constructor(private view: EditorView, metaStore?: MetaStore) {
+    constructor(
+        public view: EditorView, 
+        metaStore?: MetaStore, 
+        public callback?: ForkCallback
+    ) {
         this.metaStore = metaStore ? metaStore : new MetaStore(true);
         this.textDocument = TextDocument.create(
             this.uri,
@@ -143,12 +159,15 @@ export class RainLanguageServicesPlugin implements PluginValue {
         version: number
     ): Promise<[TransactionSpec, number]> {
         try {
-            const _td = TextDocument.create("file:///temp.rain", "rainlang", 0, text);
-            const diagnostics = getDiagnostics(
-                _td,
-                this.langServices.doValidate(toTextDocumentItem(_td), false)
-            );
-            return [setDiagnostics(this.view.state, diagnostics), version];
+            const textDocument = TextDocumentItem.create("file:///temp.rain", "rainlang", 0, text);
+            const rainDocument = this.langServices.newRainDocument(textDocument);
+            const diagnostics = getDiagnostics(rainDocument.allProblems);
+            if (diagnostics.length === 0 && this.callback) {
+                const npErrors = await this.callback(rainDocument);
+                return [setDiagnostics(this.view.state, getDiagnostics(npErrors)), version];
+            } else {
+                return [setDiagnostics(this.view.state, diagnostics), version];
+            }
         }
         catch (err) {
             console.log(err);
@@ -296,33 +315,22 @@ export function getCompletion(
  * @param diagnostics - The LSP Diagnostics
  */
 export function getDiagnostics(
-    textDocument: TextDocument,
-    diagnostics: lspDiagnostic[]
+    // textDocument: TextDocument,
+    // diagnostics: lspDiagnostic[]
+    problems: Problem[]
 ): Diagnostic[] {
-    return diagnostics.map(({ range, message, severity }) => ({
-        message,
-        from: textDocument.offsetAt(range.start),
-        to: textDocument.offsetAt(range.end),
-        severity: ({
-            [DiagnosticSeverity.Error]: "error",
-            [DiagnosticSeverity.Warning]: "warning",
-            [DiagnosticSeverity.Information]: "info",
-            [DiagnosticSeverity.Hint]: "info",
-        } as const)[severity!]
-    })).filter(({ from, to }) => 
-        from !== null && 
-        to !== null && 
-        from !== undefined && 
-        to !== undefined
-    ).sort((a, b) => {
-        switch (true) {
-        case a.from < b.from:
-            return -1;
-        case a.from > b.from:
-            return 1;
-        }
-        return 0;
-    });
+    return problems.map(({ msg, position }) => ({
+        message: msg,
+        from: position[0],
+        to: position[1],
+        severity: "error"
+        // ({
+        //     [DiagnosticSeverity.Error]: "error",
+        //     [DiagnosticSeverity.Warning]: "warning",
+        //     [DiagnosticSeverity.Information]: "info",
+        //     [DiagnosticSeverity.Hint]: "info",
+        // } as const)[severity!]
+    }));
 }
 
 /**

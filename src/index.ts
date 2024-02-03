@@ -1,13 +1,16 @@
+import { RainlangLR } from "./syntax/rainlr";
+import { yaml } from "@codemirror/lang-yaml";
 import { MetaStore } from "@rainlanguage/dotrain";
-import { RainlangLR } from "./syntax/highlighter";
 import { Extension, Facet } from "@codemirror/state";
 import { autocompletion } from "@codemirror/autocomplete";
 import { ViewPlugin, hoverTooltip } from "@codemirror/view";
 import { LanguageSupport, LanguageDescription } from "@codemirror/language";
-import { RainLanguageServicesPlugin, useLast } from "./services/languageServices";
+import { RainLanguageServicesPlugin, useLast, ForkCallback } from "./services/languageServices";
 
-export * from "../src/services/languageServices";
 export { RainlangLR, MetaStore };
+export * from "@rainlanguage/dotrain";
+export * from "../src/services/languageServices";
+export { TextDocument, TextEdit, TextDocumentContentChangeEvent } from "vscode-languageserver-textdocument";
 
 
 /**
@@ -48,6 +51,10 @@ export type LanguageServicesConfig = {
      * Provides code completion suggestions
      */
     completion?: boolean;
+    /**
+     * callback for getting native parser errors
+     */
+    callback?: ForkCallback
 } 
 
 /**
@@ -86,8 +93,9 @@ export class RainlangExtension {
     constructor(config?: LanguageServicesConfig, metaStore?: MetaStore) {
         this.extension.push(
             RainlangLR,
+            yaml().support,
             ViewPlugin.define(view => 
-                this.plugin = new RainLanguageServicesPlugin(view, metaStore)
+                this.plugin = new RainLanguageServicesPlugin(view, metaStore, config?.callback)
             )
         );
         if (!config) this.extension.push(this.hover, this.completion);
@@ -180,7 +188,7 @@ export function RainLanguage(
 ): LanguageSupport {
     let plugin: RainLanguageServicesPlugin | undefined;
     const rainViewPlugin: ViewPlugin<RainLanguageServicesPlugin> = ViewPlugin.define(
-        view => plugin = new RainLanguageServicesPlugin(view, metaStore)
+        view => plugin = new RainLanguageServicesPlugin(view, metaStore, config?.callback)
     );
     const services: Extension[] = [];
     const hover = hoverTooltip(
@@ -204,6 +212,7 @@ export function RainLanguage(
         [
             RainLanguageServicesFacet.of(rainViewPlugin),
             rainViewPlugin,
+            yaml().support,
             ...services
         ]
     );

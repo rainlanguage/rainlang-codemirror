@@ -1,22 +1,19 @@
-@precedence { first @right, second @left }
-
-@top Program { (expression | Import | Binding)* }
+@top Program { FrontMatterSplitter? (expression | Import | Binding)* }
 
 @skip { space | BlockComment }
 
 expression {
-
     Semi |
     Comma |
     Assignment |
     AngleBracketOpen |
     Number |
+    StringLiteral |
     Placeholder |
     VariableName  |
     Quote |
     Pragma |
     Expression { OpcodeOpening expression* ParenClose }
-
 }
 
 OpcodeOpening {
@@ -52,9 +49,7 @@ OpcodeOpening {
 
     Pragma { "using-words-from" }
 
-    // FrontMatter { !["]* FrontMatterSplitter }
-
-    // FrontMatterSplitter { "---" }
+    FrontMatterSplitter { "---" }
 
     VariableName { word }
 
@@ -64,6 +59,8 @@ OpcodeOpening {
       "0b" $[0-1]+ |
       $[1-9] (@digit)* "e" (@digit)+
     }
+
+    StringLiteral { "\"" ![] "\"" }
 
     AngleBracketOpen { "<" }
 
@@ -88,5 +85,7 @@ OpcodeOpening {
     @precedence { OpcodeWithOperand, VariableName }
    
 }
+
+@external propSource rainHighlight from "./highlight"
 
 @detectDelim

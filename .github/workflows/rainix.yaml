@@ -1,0 +1,23 @@
+name: Rainix CI
+on: [push]
+
+jobs:
+  rainix:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    env:
+      DEPLOYMENT_KEY: ${{ github.ref == 'refs/heads/main' && secrets.PRIVATE_KEY || secrets.PRIVATE_KEY_DEV }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@v4
+      - uses: DeterminateSystems/magic-nix-cache-action@v2
+
+      - name: Build
+        run:  nix run .#build
+      
+      - name: Run Tests
+        run:  nix run .#test
