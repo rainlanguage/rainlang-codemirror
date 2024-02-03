@@ -1,4 +1,3 @@
-/* eslint-disable no-cond-assign */
 import { parser } from "./syntax.grammar";
 import { parseMixed } from "@lezer/common";
 import { FrontMatterSplitter } from "./parser.terms";
@@ -20,15 +19,11 @@ export const RainlangLR = LRLanguage.define({
                 BlockComment(tree) { return {from: tree.from + 2, to: tree.to - 2}; }
             })
         ],
-        wrap: parseMixed((node, _input) => {
-            const id = node.type.id;
-            if (id == FrontMatterSplitter) {
-                const from = 0;
-                const to = node.node.from;
-                return {parser: yamlLanguage.parser, overlay: [{from, to}]};
-            }
-            return null;
-        }),
+        wrap: parseMixed((node, _input) => 
+            node.type.id == FrontMatterSplitter
+                ? { parser: yamlLanguage.parser, overlay: [{ from: 0, to: node.node.from }] } 
+                : null
+        )
     }),
     languageData: {
         closeBrackets: {brackets: ["(", "<", "["]},

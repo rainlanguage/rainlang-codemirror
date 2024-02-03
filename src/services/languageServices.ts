@@ -19,7 +19,7 @@ import {
 /**
  * @public A function for calling the native parser and get back its errors as Problems
  */
-export type ForkCallback = (dotrain: RainDocument) => Promise<Problem[]>;
+export type NativeParserCallback = (dotrain: RainDocument) => Promise<Problem[]>;
 
 /**
  * @public Converts TextDocument to TextDocumentItem
@@ -47,10 +47,10 @@ export function toTextDocumentItem(textDocument: TextDocument): TextDocumentItem
 export class RainLanguageServicesPlugin implements PluginValue {
     public readonly uri = "file:///untitled.rain";
     public readonly languageId = "rainlang";
+    public metaStore: MetaStore;
     public version = 0;
     private textDocument: TextDocument;
     private langServices: RainLanguageServices;
-    private metaStore: MetaStore;
 
     /**
      * @public constructor of the class
@@ -63,7 +63,7 @@ export class RainLanguageServicesPlugin implements PluginValue {
     constructor(
         public view: EditorView, 
         metaStore?: MetaStore, 
-        public callback?: ForkCallback
+        public callback?: NativeParserCallback
     ) {
         this.metaStore = metaStore ? metaStore : new MetaStore(true);
         this.textDocument = TextDocument.create(
@@ -94,15 +94,6 @@ export class RainLanguageServicesPlugin implements PluginValue {
     }
 
     destroy() {}
-
-    /** 
-     * @public 
-     * Get the active meta store object of this plugin instance in order to manulay 
-     * update it for example update the meta store subgraphs or add a new k/v meta
-     */
-    public getMetaStore(): MetaStore {
-        return this.metaStore;
-    }
 
     /**
      * @public Handles calls for hover tooltip
@@ -314,11 +305,7 @@ export function getCompletion(
  * @param textDocument - The text document object
  * @param diagnostics - The LSP Diagnostics
  */
-export function getDiagnostics(
-    // textDocument: TextDocument,
-    // diagnostics: lspDiagnostic[]
-    problems: Problem[]
-): Diagnostic[] {
+export function getDiagnostics(problems: Problem[]): Diagnostic[] {
     return problems.map(({ msg, position }) => ({
         message: msg,
         from: position[0],
