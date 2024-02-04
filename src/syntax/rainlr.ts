@@ -21,7 +21,7 @@ export const RainlangLR = LRLanguage.define({
         ],
         wrap: parseMixed((node, _input) => 
             node.type.id == FrontMatterSplitter
-                ? { parser: yamlLanguage.parser, overlay: [{ from: 0, to: node.node.from }] } 
+                ? { parser: yamlLanguage.parser, overlay: [{ from: 0, to: node.from }] } 
                 : null
         )
     }),
