@@ -60,7 +60,7 @@ OpcodeOpening {
       $[1-9] (@digit)* "e" (@digit)+
     }
 
-    StringLiteral { "\"" ![] "\"" }
+    StringLiteral { "\"" !["] "\"" }
 
     AngleBracketOpen { "<" }
 
