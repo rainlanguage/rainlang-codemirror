@@ -19,4 +19,5 @@ export const rainHighlight = styleTags({
     Binding: tags.className,
     Quote: tags.string,
     StringLiteral: tags.string,
+    SubParser: tags.unit,
 });
