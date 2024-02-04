@@ -44,11 +44,11 @@ export const RainLanguageServicesFacet = Facet.define<
  */
 export type LanguageServicesConfig = {
     /**
-     * Provides hover tooltips
+     * if hover tooltips should be actiavted
      */
     hover?: boolean;
     /**
-     * Provides code completion suggestions
+     * if code completion suggestions should be actiavted
      */
     completion?: boolean;
     /**
