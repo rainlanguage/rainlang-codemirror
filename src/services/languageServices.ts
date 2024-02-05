@@ -49,8 +49,8 @@ export class RainLanguageServicesPlugin implements PluginValue {
     public readonly languageId = "rainlang";
     public metaStore: MetaStore;
     public version = 0;
+    public langServices: RainLanguageServices;
     private textDocument: TextDocument;
-    private langServices: RainLanguageServices;
 
     /**
      * @public constructor of the class
@@ -296,14 +296,8 @@ export function getCompletion(
 }
 
 /**
- * @public Converts LSP Diagnostics to codemirror diagnostics.
- * Original code from [codemirror-languageserver](https://github.com/FurqanSoftware/codemirror-languageserver),
- * BSD-3-Clause License, Copyright (c) 2021, Mahmud Ridwan, All rights reserved.
- * 
- * @see [LICENSE](./LICENSE) for license details.
- * 
- * @param textDocument - The text document object
- * @param diagnostics - The LSP Diagnostics
+ * @public Converts RainDocument Problems to codemirror diagnostics
+ * @param problems - RainDocument problems
  */
 export function getDiagnostics(problems: Problem[]): Diagnostic[] {
     return problems.map(({ msg, position }) => ({

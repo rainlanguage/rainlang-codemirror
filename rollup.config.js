@@ -38,6 +38,7 @@ export default {
     ],
     external: [
         "@lezer/lr",
+        "@lezer/common",
         "@lezer/highlight",
         "@codemirror/view",
         "@codemirror/lint",
@@ -45,7 +46,9 @@ export default {
         "@codemirror/tooltip",
         "@codemirror/language",
         "@codemirror/autocomplete",
-        "@rainprotocol/rainlang", 
+        "@codemirror/lang-yaml",
+        "@rainlanguage/dotrain",
+        "vscode-languageserver-textdocument",
     ]
 };
 
