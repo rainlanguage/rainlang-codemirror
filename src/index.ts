@@ -1,5 +1,5 @@
-import { RainlangLR } from "./syntax/rainlr";
 import { yaml } from "@codemirror/lang-yaml";
+import { RainlangLR } from "./syntax/language";
 import { MetaStore } from "@rainlanguage/dotrain";
 import { Extension, Facet } from "@codemirror/state";
 import { autocompletion } from "@codemirror/autocomplete";
