@@ -5,7 +5,7 @@ import { Extension, Facet } from "@codemirror/state";
 import { autocompletion } from "@codemirror/autocomplete";
 import { ViewPlugin, hoverTooltip } from "@codemirror/view";
 import { LanguageSupport, LanguageDescription } from "@codemirror/language";
-import { RainLanguageServicesPlugin, useLast, NativeParserCallback } from "./services/languageServices";
+import { RainLanguageServicesPlugin, RawRainLanguageServicesPlugin, useLast, NativeParserCallback, RawLanguageServicesCallbacks } from "./services/languageServices";
 
 export { RainlangLR, MetaStore };
 export * from "@rainlanguage/dotrain";
@@ -59,7 +59,7 @@ export type LanguageServicesConfig = {
      * The MetaStore to instantiate rain language services with
      */
     metaStore?: MetaStore
-} 
+}
 
 /**
  * @public Rainlang as a codemirror extension
@@ -75,8 +75,7 @@ export type LanguageServicesConfig = {
  * const metaStore = rainlangExtension.plugin.metaStore;
  * ```
  */
-export class RainlangExtension {
-    public extension: Extension[] = [];
+export class RainlangExtension extends LanguageSupport {
     public plugin: RainLanguageServicesPlugin | undefined;
     private hover = hoverTooltip(
         (_view, pos) => this.plugin?.handleHoverTooltip(pos) ?? null
@@ -95,22 +94,63 @@ export class RainlangExtension {
      * @param config - Options for language services to include
      */
     constructor(config?: LanguageServicesConfig) {
-        this.extension.push(
-            RainlangLR,
-            yaml().support,
-            ViewPlugin.define(view => 
-                this.plugin = new RainLanguageServicesPlugin(
-                    view, 
-                    config?.metaStore, 
-                    config?.callback
-                )
+        const rainViewPlugin = ViewPlugin.define(view => 
+            this.plugin = new RainLanguageServicesPlugin(
+                view, 
+                config?.metaStore, 
+                config?.callback
             )
         );
-        if (!config) this.extension.push(this.hover, this.completion);
+        const ext = [
+            yaml().support,
+            RainLanguageServicesFacet.of(rainViewPlugin),
+            rainViewPlugin
+        ];
+        super(RainlangLR, ext);
+        if (!config) ext.push(this.hover, this.completion);
         else {
-            if (config?.hover) this.extension.push(this.hover);
-            if (config?.completion) this.extension.push(this.completion);
+            if (config?.hover) ext.push(this.hover);
+            if (config?.completion) ext.push(this.completion);
         }
+    }
+}
+
+/**
+ * @public Raw Rainlang codemirror extension, that does everything through supplied callbacks
+ */
+export class RawRainlangExtension extends LanguageSupport {
+    public plugin: RawRainLanguageServicesPlugin | undefined;
+    private hover = hoverTooltip(
+        (_view, pos) => this.plugin?.handleHoverTooltip(pos) ?? null
+    );
+    private completion = autocompletion({
+        override: [
+            async (context) => {
+                if (this.plugin == null) return null;
+                return await this.plugin?.handleCompletion(context);
+            },
+        ],
+    });
+
+    /**
+     * @public Constructor of the RainlangCodemirror class
+     * @param callbacks - Raw language services callbacks
+     */
+    constructor(callbacks: RawLanguageServicesCallbacks) {
+        const rainViewPlugin = ViewPlugin.define(view => 
+            this.plugin = new RawRainLanguageServicesPlugin(
+                view, 
+                callbacks
+            )
+        );
+        const ext = [
+            yaml().support,
+            RainLanguageServicesFacet.of(rainViewPlugin),
+            rainViewPlugin
+        ];
+        super(RainlangLR, ext);
+        if (callbacks.hover) ext.push(this.hover);
+        if (callbacks.completion) ext.push(this.completion);
     }
 }
 
@@ -121,7 +161,7 @@ export class RainlangExtension {
  * 
  * @example
  * ```typescript
- * const rainLanguageSupport = RainLanguage(config);
+ * const rainLanguageSupport = RainLanguageSupport(config);
  * ```
  * in order to get the Meta.Store instance, it should be done through getting the plugin instance 
  * from the EditorView with providing it the result of getting the `RainLanguageServicesFacet` 
@@ -142,7 +182,7 @@ export class RainlangExtension {
  * @param metaStore - (optional) The meta store object to use
  * @returns rainlang LanguageSupport
  */
-export function RainLanguage(config?: LanguageServicesConfig): LanguageSupport {
+export function RainLanguageSupport(config?: LanguageServicesConfig): LanguageSupport {
     let plugin: RainLanguageServicesPlugin | undefined;
     const rainViewPlugin: ViewPlugin<RainLanguageServicesPlugin> = ViewPlugin.define(
         view => plugin = new RainLanguageServicesPlugin(view, config?.metaStore, config?.callback)
@@ -184,7 +224,7 @@ export const RainlangDescription = LanguageDescription.of({
     alias: [ "Rain Language", "Rainlang", "RainLang", "rain" ],
     extensions: [ ".rain" ],
     load: (config?: LanguageServicesConfig) => {
-        return Promise.resolve(RainLanguage(config));
+        return Promise.resolve(new RainlangExtension(config));
     },
-    support: RainLanguage()
+    support: new RainlangExtension()
 });

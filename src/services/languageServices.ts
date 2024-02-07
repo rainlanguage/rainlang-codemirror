@@ -12,7 +12,8 @@ import {
     CompletionItem,
     TextDocumentItem,  
     CompletionItemKind, 
-    RainLanguageServices 
+    RainLanguageServices, 
+    Position
 } from "@rainlanguage/dotrain";
 
 
@@ -168,6 +169,135 @@ export class RainLanguageServicesPlugin implements PluginValue {
 }
 
 /**
+ * @public Defines the raw language services callbacks signature
+ */
+export type RawLanguageServicesCallbacks = {
+    diagnostics: (textDocument: TextDocumentItem) => Promise<Problem[]>;
+    hover?: (textDocument: TextDocumentItem, position: Position) => Promise<Hover | null>;
+    completion?: (
+        textDocument: TextDocumentItem, 
+        position: Position
+    ) => Promise<CompletionItem[] | null>;
+}
+
+/**
+ * @public A plugin that gets all lang services through provided callbacks.
+ * So all the logic behind suppliying the lang services results can be out-sources
+ * on the callbacks implementations.
+ * Each callback is triggered when the services is on demand in the text editor 
+ * through use input/actions
+ */ 
+export class RawRainLanguageServicesPlugin implements PluginValue {
+    public readonly uri = "file:///untitled.rain";
+    public readonly languageId = "rainlang";
+    public version = 0;
+    private textDocument: TextDocument;
+    
+    constructor(
+        public view: EditorView, 
+        public callbacks: RawLanguageServicesCallbacks,
+    ) {
+        this.textDocument = TextDocument.create(
+            this.uri,
+            this.languageId,
+            this.version,
+            this.view.state.doc.toString()
+        );
+        this.processDiagnostics(this.view.state.doc.toString(), this.version).then(
+            v => this.view.dispatch(v[0])
+        );
+    }
+
+    // update the instance of TexTdocument and RainDocument
+    update(update: ViewUpdate) {
+        if (!update.docChanged) return;
+        else {
+            TextDocument.update(
+                this.textDocument,
+                [{ text: this.view.state.doc.toString() }],
+                ++this.version
+            );
+            this.processDiagnostics(this.view.state.doc.toString(), this.version).then(
+                v => v[1] === this.version ? this.view.dispatch(v[0]) : {}
+            );
+        }
+    }
+
+    destroy() {}
+
+    /**
+     * @public Handles calls for hover tooltip
+     */
+    public async handleHoverTooltip(offset: number): Promise<Tooltip | null> {
+        if (this.callbacks.hover) {
+            try {
+                const hover = await this.callbacks.hover(
+                    toTextDocumentItem(this.textDocument),
+                    this.textDocument.positionAt(offset)
+                );
+                if (!hover) return null;
+                else {
+                    let end;
+                    if (hover.range) {
+                        offset = this.textDocument.offsetAt(hover.range.start);
+                        end = this.textDocument.offsetAt(hover.range.end);
+                    }
+                    return getHoverTooltip(hover, offset, end);
+                }
+            }
+            catch (err) {
+                console.log(err);
+                return null;
+            }
+        }
+        else return null;
+    }
+
+    /**
+     * @public Handles calls for code completion
+     */
+    public async handleCompletion(context: CompletionContext): Promise<CompletionResult | null> {
+        if (this.callbacks.completion) {
+            try {
+                const completions = await this.callbacks.completion(
+                    toTextDocumentItem(this.textDocument),
+                    this.textDocument.positionAt(context.pos)
+                );
+                if (!completions) return null;
+                else return getCompletion(
+                    context, 
+                    completions
+                );
+            }
+            catch (err) {
+                console.log(err);
+                return null;
+            }
+        }
+        else return null;
+    }
+
+
+    /**
+     * @public Handles calls for docuement diagnostics
+     */
+    public async processDiagnostics(
+        text: string,
+        version: number
+    ): Promise<[TransactionSpec, number]> {
+        try {
+            const textDocument = TextDocumentItem.create("file:///temp.rain", "rainlang", 0, text);
+            const diagnostics = await this.callbacks.diagnostics(textDocument);
+            return [setDiagnostics(this.view.state, getDiagnostics(diagnostics)), version];
+        }
+        catch (err) {
+            console.log(err);
+            return [setDiagnostics(this.view.state, []), version];
+        }
+    }
+}
+
+/**
  * @public Converts LSP hover to codemirror hover tooltips.
  * Original code from [codemirror-languageserver](https://github.com/FurqanSoftware/codemirror-languageserver),
  * BSD-3-Clause License, Copyright (c) 2021, Mahmud Ridwan, All rights reserved.
@@ -237,7 +367,7 @@ export function getCompletion(
                     const matcher = prefixMatch([_comp]);
                     const match = context.matchBefore(matcher[1])!;
                     if (insertText) {
-                        let cursorPos = match.from + insertText.length - 1;
+                        let cursorPos = match.from + insertText.length;
                         if (insertText.includes("<>")) cursorPos -= 2;
                         view.dispatch({
                             changes: { 
