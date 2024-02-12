@@ -22,8 +22,8 @@
         "/README.md"
     ],
     "scripts": {
-        "prepare": "npm run prepare-parser && npm run build",
-        "build": "rollup -c rollup.config.js && rimraf ./dist/index.d.cts",
+        "prepare": "npm run build",
+        "build": "npm run prepare-parser && rollup -c rollup.config.js && rimraf ./dist/index.d.cts",
         "lint": "eslint \"src/**\"",
         "lint-fix": "eslint \"src/**\" --fix",
         "test": "echo 'there is not test at the moment'",
@@ -51,7 +51,7 @@
         "@codemirror/view": "^6.9.3",
         "@lezer/highlight": "^1.1.3",
         "@lezer/lr": "^1.3.3",
-        "@rainlanguage/dotrain": "github:rainlanguage/dotrain#9cb1432b7e82765c2de5e4fb8cfd0a6ca6d2646a",
+        "@rainlanguage/dotrain": "github:rainlanguage/dotrain#5772fd6555e4430fdac6e97cc859152ee77fbd2b",
         "vscode-languageserver-textdocument": "^1.0.11"
     }
 }
