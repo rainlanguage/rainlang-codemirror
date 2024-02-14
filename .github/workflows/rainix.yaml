@@ -16,6 +16,9 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@v4
       - uses: DeterminateSystems/magic-nix-cache-action@v2
 
+      - name: Install
+        run:  nix run .#install
+
       - name: Build
         run:  nix run .#build
       
