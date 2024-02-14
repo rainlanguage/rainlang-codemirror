@@ -50,7 +50,7 @@
         "@codemirror/view": "^6.9.3",
         "@lezer/highlight": "^1.1.3",
         "@lezer/lr": "^1.3.3",
-        "@rainlanguage/dotrain": "github:rainlanguage/dotrain#2a4e7b5e61c366d24abbf4fcf59f4c25bcdcbc41",
+        "@rainlanguage/dotrain": "github:rainlanguage/dotrain#350da1f04e57221bb0c46fe81c2760551bab750d",
         "vscode-languageserver-textdocument": "^1.0.11"
     }
 }
