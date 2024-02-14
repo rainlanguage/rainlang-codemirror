@@ -6,14 +6,14 @@ import { CompletionContext, CompletionResult, Completion } from "@codemirror/aut
 import { 
     Hover, 
     Problem, 
+    Position, 
     MetaStore, 
     RainDocument, 
     MarkupContent, 
     CompletionItem,
     TextDocumentItem,  
     CompletionItemKind, 
-    RainLanguageServices, 
-    Position
+    RainLanguageServices,
 } from "@rainlanguage/dotrain";
 
 
@@ -192,7 +192,7 @@ export class RawRainLanguageServicesPlugin implements PluginValue {
     public readonly languageId = "rainlang";
     public version = 0;
     private textDocument: TextDocument;
-    
+
     constructor(
         public view: EditorView, 
         public callbacks: RawLanguageServicesCallbacks,
