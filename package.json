@@ -6,12 +6,12 @@
     "description": "Rain language implementation for codemirror text editor",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/rainplanguage/rainlang-codemirror.git"
+        "url": "git+https://github.com/rainlanguage/rainlang-codemirror.git"
     },
     "bugs": {
-        "url": "https://github.com/rainplanguage/rainlang-codemirror/issues"
+        "url": "https://github.com/rainlanguage/rainlang-codemirror/issues"
     },
-    "homepage": "https://github.com/rainplanguage/rainlang-codemirror#readme",
+    "homepage": "https://github.com/rainlanguage/rainlang-codemirror#readme",
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.js",
