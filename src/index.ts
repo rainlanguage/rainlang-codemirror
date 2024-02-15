@@ -5,7 +5,13 @@ import { Extension, Facet } from "@codemirror/state";
 import { autocompletion } from "@codemirror/autocomplete";
 import { ViewPlugin, hoverTooltip } from "@codemirror/view";
 import { LanguageSupport, LanguageDescription } from "@codemirror/language";
-import { RainLanguageServicesPlugin, RawRainLanguageServicesPlugin, useLast, NativeParserCallback, RawLanguageServicesCallbacks } from "./services/languageServices";
+import { 
+    useLast, 
+    NativeParserCallback, 
+    RainLanguageServicesPlugin, 
+    RawLanguageServicesCallbacks, 
+    RawRainLanguageServicesPlugin 
+} from "./services/languageServices";
 
 export { RainlangLR, MetaStore };
 export * from "@rainlanguage/dotrain";
