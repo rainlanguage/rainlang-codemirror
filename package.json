@@ -22,7 +22,7 @@
         "/README.md"
     ],
     "scripts": {
-        "prepublish":" npm run build",
+        "prepublish": " npm run build",
         "build": "npm run prepare-parser && rollup -c rollup.config.js && rimraf ./dist/index.d.cts",
         "lint": "eslint \"src/**\"",
         "lint-fix": "eslint \"src/**\" --fix",
@@ -51,7 +51,7 @@
         "@codemirror/view": "^6.9.3",
         "@lezer/highlight": "^1.1.3",
         "@lezer/lr": "^1.3.3",
-        "@rainlanguage/dotrain": "github:rainlanguage/dotrain#0d9d46071c54274730ff2b2be44079964fa4171e",
+        "@rainlanguage/dotrain": "^6.0.1-alpha.6",
         "vscode-languageserver-textdocument": "^1.0.11"
     }
 }
