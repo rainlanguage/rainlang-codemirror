@@ -20,7 +20,7 @@ export const highlight = styleTags({
     Binding: tags.className,
     Quote: tags.string,
     StringLiteral: tags.string,
-    SubParser: tags.unit,
+    SubParser: tags.string,
 });
 
 export const indent = indentNodeProp.add({
