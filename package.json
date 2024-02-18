@@ -22,7 +22,7 @@
         "/README.md"
     ],
     "scripts": {
-        "prepublish": " npm run build",
+        "prepublish": "npm run build",
         "build": "npm run prepare-parser && rollup -c rollup.config.js && rimraf ./dist/index.d.cts",
         "lint": "eslint \"src/**\"",
         "lint-fix": "eslint \"src/**\" --fix",
