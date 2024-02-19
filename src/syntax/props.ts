@@ -21,6 +21,7 @@ export const highlight = styleTags({
     Quote: tags.string,
     StringLiteral: tags.string,
     SubParser: tags.string,
+    Pragma: tags.unit,
 });
 
 export const indent = indentNodeProp.add({
