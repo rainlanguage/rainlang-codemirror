@@ -1,21 +1,21 @@
-@precedence { first @right, second @left }
 
-@top Program { (expression | Import | Binding)* }
+@top Program { FrontMatter? FrontMatterSplitter? (expression | Import | Binding)* }
 
 @skip { space | BlockComment }
 
 expression {
-
     Semi |
     Comma |
     Assignment |
     AngleBracketOpen |
     Number |
+    StringLiteral |
+    SubParser |
     Placeholder |
     VariableName  |
     Quote |
+    Pragma |
     Expression { OpcodeOpening expression* ParenClose }
-
 }
 
 OpcodeOpening {
@@ -27,6 +27,10 @@ OpcodeOpening {
     blockCommentEnd { "*/" }
     blockCommentNewline { "\n" | "\r" | "\r\n" }
     @else blockCommentContent
+}
+
+@external tokens frontMatter from "./tokens" {
+    FrontMatter
 }
 
 @skip {} {
@@ -49,14 +53,21 @@ OpcodeOpening {
 
     OpcodeWithOperand { word AngleBracketOpen }
 
+    Pragma { "using-words-from" }
+
+    FrontMatterSplitter { "---" }
+
     VariableName { word }
 
     Number {
       @digit |
       "0x" $[a-fA-F0-9]+ |
-      "0b" $[0-1]+ |
       $[1-9] (@digit)* "e" (@digit)+
     }
+
+    StringLiteral { "\"" ![\"]* "\"" }
+
+    SubParser { "[" ![\[\]]* "]" }
 
     AngleBracketOpen { "<" }
 
@@ -74,10 +85,16 @@ OpcodeOpening {
 
     space { $[ \t\n\r]+ }
 
+    @precedence { Pragma, VariableName }
+
     @precedence { Opcode, VariableName }
 
     @precedence { OpcodeWithOperand, VariableName }
    
 }
+
+@external propSource highlight from "./props"
+@external propSource indent from "./props"
+@external propSource fold from "./props"
 
 @detectDelim

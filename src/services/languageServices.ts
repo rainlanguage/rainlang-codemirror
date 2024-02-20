@@ -1,20 +1,38 @@
 import { Text, TransactionSpec } from "@codemirror/state";
 import { Diagnostic, setDiagnostics } from "@codemirror/lint";
+import { TextDocument } from "vscode-languageserver-textdocument";
 import { ViewUpdate, PluginValue, EditorView, Tooltip } from "@codemirror/view";
 import { CompletionContext, CompletionResult, Completion } from "@codemirror/autocomplete";
 import { 
-    Meta, 
     Hover, 
-    TextDocument, 
+    Problem, 
+    Position, 
+    MetaStore, 
+    RainDocument, 
     MarkupContent, 
     CompletionItem,
-    DiagnosticSeverity, 
+    TextDocumentItem,  
     CompletionItemKind, 
     RainLanguageServices,
-    getRainLanguageServices,
-    Diagnostic as lspDiagnostic 
-} from "@rainprotocol/rainlang";
+} from "@rainlanguage/dotrain";
 
+
+/**
+ * @public A function for calling the native parser and get back its errors as Problems
+ */
+export type NativeParserCallback = (dotrain: RainDocument) => Promise<Problem[]>;
+
+/**
+ * @public Converts TextDocument to TextDocumentItem
+ */
+export function toTextDocumentItem(textDocument: TextDocument): TextDocumentItem {
+    return {
+        text: textDocument.getText(),
+        uri: textDocument.uri,
+        version: textDocument.version,
+        languageId: textDocument.languageId
+    };
+}
 
 // const useLast = (values: readonly any[]) => values.reduce((_, v) => v, '');
 // const documentUri = Facet.define<string, string>({ combine: useLast });
@@ -30,28 +48,32 @@ import {
 export class RainLanguageServicesPlugin implements PluginValue {
     public readonly uri = "file:///untitled.rain";
     public readonly languageId = "rainlang";
+    public metaStore: MetaStore;
     public version = 0;
+    public langServices: RainLanguageServices;
     private textDocument: TextDocument;
-    private langServices: RainLanguageServices;
-    private metaStore: Meta.Store;
 
     /**
      * @public constructor of the class
      * @param view - The editor view instance
      * @param metaStore - (optional) The meta store object to use
+     * @param callback - (optional) The callback to run fork calls on native parser,
+     * this will be called everytime there are no active diagnostics, so as a result, 
+     * errors from calling onchain parser will be shown as diagnostics
      */
-    constructor(private view: EditorView, metaStore?: Meta.Store) {
-        this.metaStore = metaStore ? metaStore : new Meta.Store();
+    constructor(
+        public view: EditorView, 
+        metaStore?: MetaStore, 
+        public callback?: NativeParserCallback
+    ) {
+        this.metaStore = metaStore ? metaStore : new MetaStore(true);
         this.textDocument = TextDocument.create(
             this.uri,
             this.languageId,
             this.version,
             this.view.state.doc.toString()
         );
-        this.langServices = getRainLanguageServices({
-            metaStore: this.metaStore, 
-            noMetaSearch: true
-        });
+        this.langServices = new RainLanguageServices(this.metaStore);
         this.processDiagnostics(this.view.state.doc.toString(), this.version).then(
             v => this.view.dispatch(v[0])
         );
@@ -74,22 +96,13 @@ export class RainLanguageServicesPlugin implements PluginValue {
 
     destroy() {}
 
-    /** 
-     * @public 
-     * Get the active meta store object of this plugin instance in order to manulay 
-     * update it for example update the meta store subgraphs or add a new k/v meta
-     */
-    public getMetaStore(): Meta.Store {
-        return this.metaStore;
-    }
-
     /**
      * @public Handles calls for hover tooltip
      */
     public async handleHoverTooltip(offset: number): Promise<Tooltip | null> {
         try {
-            const hover = await this.langServices.doHover(
-                this.textDocument,
+            const hover = this.langServices.doHover(
+                toTextDocumentItem(this.textDocument),
                 this.textDocument.positionAt(offset)
             );
             if (!hover) return null;
@@ -113,8 +126,8 @@ export class RainLanguageServicesPlugin implements PluginValue {
      */
     public async handleCompletion(context: CompletionContext): Promise<CompletionResult | null> {
         try {
-            const completions = await this.langServices.doComplete(
-                this.textDocument,
+            const completions = this.langServices.doComplete(
+                toTextDocumentItem(this.textDocument),
                 this.textDocument.positionAt(context.pos)
             );
             if (!completions) return null;
@@ -138,20 +151,148 @@ export class RainLanguageServicesPlugin implements PluginValue {
         version: number
     ): Promise<[TransactionSpec, number]> {
         try {
-            const _td = TextDocument.create("untitled", "rainlang", 0, text);
-            const diagnostics = getDiagnostics(
-                _td,
-                await this.langServices.doValidate(_td)
-            );
-            return [setDiagnostics(this.view.state, diagnostics), version];
-            // this.view.dispatch(tx);
+            const textDocument = TextDocumentItem.create("file:///temp.rain", "rainlang", 0, text);
+            const rainDocument = this.langServices.newRainDocument(textDocument);
+            const diagnostics = getDiagnostics(rainDocument.allProblems);
+            if (diagnostics.length === 0 && this.callback) {
+                const npErrors = await this.callback(rainDocument);
+                return [setDiagnostics(this.view.state, getDiagnostics(npErrors)), version];
+            } else {
+                return [setDiagnostics(this.view.state, diagnostics), version];
+            }
         }
         catch (err) {
             console.log(err);
             return [setDiagnostics(this.view.state, []), version];
-            // this.view.dispatch(
-            //     setDiagnostics(this.view.state, [])
-            // );
+        }
+    }
+}
+
+/**
+ * @public Defines the raw language services callbacks signature
+ */
+export type RawLanguageServicesCallbacks = {
+    diagnostics: (textDocument: TextDocumentItem) => Promise<Problem[]>;
+    hover?: (textDocument: TextDocumentItem, position: Position) => Promise<Hover | null>;
+    completion?: (
+        textDocument: TextDocumentItem, 
+        position: Position
+    ) => Promise<CompletionItem[] | null>;
+}
+
+/**
+ * @public A plugin that gets all lang services through provided callbacks.
+ * So all the logic behind suppliying the lang services results can be out-sources
+ * on the callbacks implementations.
+ * Each callback is triggered when the services is on demand in the text editor 
+ * through use input/actions
+ */ 
+export class RawRainLanguageServicesPlugin implements PluginValue {
+    public readonly uri = "file:///untitled.rain";
+    public readonly languageId = "rainlang";
+    public version = 0;
+    private textDocument: TextDocument;
+
+    constructor(
+        public view: EditorView, 
+        public callbacks: RawLanguageServicesCallbacks,
+    ) {
+        this.textDocument = TextDocument.create(
+            this.uri,
+            this.languageId,
+            this.version,
+            this.view.state.doc.toString()
+        );
+        this.processDiagnostics(this.view.state.doc.toString(), this.version).then(
+            v => this.view.dispatch(v[0])
+        );
+    }
+
+    // update the instance of TexTdocument and RainDocument
+    update(update: ViewUpdate) {
+        if (!update.docChanged) return;
+        else {
+            TextDocument.update(
+                this.textDocument,
+                [{ text: this.view.state.doc.toString() }],
+                ++this.version
+            );
+            this.processDiagnostics(this.view.state.doc.toString(), this.version).then(
+                v => v[1] === this.version ? this.view.dispatch(v[0]) : {}
+            );
+        }
+    }
+
+    destroy() {}
+
+    /**
+     * @public Handles calls for hover tooltip
+     */
+    public async handleHoverTooltip(offset: number): Promise<Tooltip | null> {
+        if (this.callbacks.hover) {
+            try {
+                const hover = await this.callbacks.hover(
+                    toTextDocumentItem(this.textDocument),
+                    this.textDocument.positionAt(offset)
+                );
+                if (!hover) return null;
+                else {
+                    let end;
+                    if (hover.range) {
+                        offset = this.textDocument.offsetAt(hover.range.start);
+                        end = this.textDocument.offsetAt(hover.range.end);
+                    }
+                    return getHoverTooltip(hover, offset, end);
+                }
+            }
+            catch (err) {
+                console.log(err);
+                return null;
+            }
+        }
+        else return null;
+    }
+
+    /**
+     * @public Handles calls for code completion
+     */
+    public async handleCompletion(context: CompletionContext): Promise<CompletionResult | null> {
+        if (this.callbacks.completion) {
+            try {
+                const completions = await this.callbacks.completion(
+                    toTextDocumentItem(this.textDocument),
+                    this.textDocument.positionAt(context.pos)
+                );
+                if (!completions) return null;
+                else return getCompletion(
+                    context, 
+                    completions
+                );
+            }
+            catch (err) {
+                console.log(err);
+                return null;
+            }
+        }
+        else return null;
+    }
+
+
+    /**
+     * @public Handles calls for docuement diagnostics
+     */
+    public async processDiagnostics(
+        text: string,
+        version: number
+    ): Promise<[TransactionSpec, number]> {
+        try {
+            const textDocument = TextDocumentItem.create("file:///temp.rain", "rainlang", 0, text);
+            const diagnostics = await this.callbacks.diagnostics(textDocument);
+            return [setDiagnostics(this.view.state, getDiagnostics(diagnostics)), version];
+        }
+        catch (err) {
+            console.log(err);
+            return [setDiagnostics(this.view.state, []), version];
         }
     }
 }
@@ -174,14 +315,6 @@ export function getHoverTooltip(
     end?: number
 ): Tooltip | null {
     const { contents } = hover;
-    // let pos = posToOffset(doc, position)!;
-    // let end;
-    // if (range) {
-    //     // pos = posToOffset(doc, range.start)!;
-    //     // end = posToOffset(doc, range.end);
-    //     pos = textDocument.offsetAt(range.start);
-    //     end = textDocument.offsetAt(range.end);
-    // }
     if (pos === null) return null;
     const dom = document.createElement("div");
     dom.classList.add("documentation");
@@ -211,22 +344,7 @@ export function getCompletion(
     ) as Record<CompletionItemKind, string>;
 
     let { pos } = context;
-    // const line = state.doc.lineAt(pos);
-    // let trigKind: CompletionTriggerKind = CompletionTriggerKind.Invoked;
-    // let trigChar: string | undefined;
-    // if (
-    //     !explicit &&
-    //     plugin.client.capabilities?.completionProvider?.triggerCharacters?.includes(
-    //         line.text[pos - line.from - 1]
-    //     )
-    // ) {
-    //     trigKind = CompletionTriggerKind.TriggerCharacter;
-    //     trigChar = line.text[pos - line.from - 1];
-    // }
-    if (
-        // trigKind === CompletionTriggerKind.Invoked &&
-        !context.matchBefore(/['\w-]+$/)
-    ) return null;
+    if (!context.matchBefore(/['\w-]+$/)) return null;
 
     let completions = completionItems.map(
         ({
@@ -241,7 +359,6 @@ export function getCompletion(
             const completion: Completion & {
                 filterText: string;
                 sortText?: string;
-                // apply: string;
             } = {
                 label,
                 detail,
@@ -250,7 +367,7 @@ export function getCompletion(
                     const matcher = prefixMatch([_comp]);
                     const match = context.matchBefore(matcher[1])!;
                     if (insertText) {
-                        let cursorPos = match.from + insertText.length - 1;
+                        let cursorPos = match.from + insertText.length;
                         if (insertText.includes("<>")) cursorPos -= 2;
                         view.dispatch({
                             changes: { 
@@ -309,45 +426,22 @@ export function getCompletion(
 }
 
 /**
- * @public Converts LSP Diagnostics to codemirror diagnostics.
- * Original code from [codemirror-languageserver](https://github.com/FurqanSoftware/codemirror-languageserver),
- * BSD-3-Clause License, Copyright (c) 2021, Mahmud Ridwan, All rights reserved.
- * 
- * @see [LICENSE](./LICENSE) for license details.
- * 
- * @param textDocument - The text document object
- * @param diagnostics - The LSP Diagnostics
+ * @public Converts RainDocument Problems to codemirror diagnostics
+ * @param problems - RainDocument problems
  */
-export function getDiagnostics(
-    textDocument: TextDocument,
-    diagnostics: lspDiagnostic[]
-): Diagnostic[] {
-    return diagnostics.map(({ range, message, severity }) => ({
-        message,
-        // from: posToOffset(doc, range.start)!,
-        // to: posToOffset(doc, range.end)!,
-        from: textDocument.offsetAt(range.start),
-        to: textDocument.offsetAt(range.end),
-        severity: ({
-            [DiagnosticSeverity.Error]: "error",
-            [DiagnosticSeverity.Warning]: "warning",
-            [DiagnosticSeverity.Information]: "info",
-            [DiagnosticSeverity.Hint]: "info",
-        } as const)[severity!]
-    })).filter(({ from, to }) => 
-        from !== null && 
-        to !== null && 
-        from !== undefined && 
-        to !== undefined
-    ).sort((a, b) => {
-        switch (true) {
-        case a.from < b.from:
-            return -1;
-        case a.from > b.from:
-            return 1;
-        }
-        return 0;
-    });
+export function getDiagnostics(problems: Problem[]): Diagnostic[] {
+    return problems.map(({ msg, position }) => ({
+        message: msg,
+        from: position[0],
+        to: position[1],
+        severity: "error"
+        // ({
+        //     [DiagnosticSeverity.Error]: "error",
+        //     [DiagnosticSeverity.Warning]: "warning",
+        //     [DiagnosticSeverity.Information]: "info",
+        //     [DiagnosticSeverity.Hint]: "info",
+        // } as const)[severity!]
+    }));
 }
 
 /**

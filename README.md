@@ -23,36 +23,18 @@ npm install codemirror-rainlang
 ```
 <br>
 
-Then use `RainLanguage()` to get the `LanguageSupport` class object and use it as desired in editor:
+Then you can use any of `RainLanguage()`, `RainlangExtension` an `RainlangDescription` to get rainlang codemirror extension:
 ```typescript
 // import
 import { RainLanguage, RainLanguageServicesFacet } from "codemirror-rainlang";
 
 // get the `LanguageSupport` instance
-const rainlangSupport = RainLanguage(config)
+const rainlangCodemirror = new RainlangExtension(config);
 
-// for getting the MetaStore instance firts get the facet value of `RainLanguageServicesFacet` which is of type `ViewPlugin`:
-const rainViewPlugin = editorView.state.facet(RainLanguageServicesFacet);
+// for getting the plugin instance of a running extension
+const rainViewPlugin = rainlangCodemirror.plugin;
 
-// then retrive the instance of the `RainLanguageServicesPlugin` by:
-const rainPlugin = editorView.plugin(rainViewPlugin);
-
-// lastly call the `getMetaStore()` method to get the MetaStore instance to interact with it manually:
-rainPlugin.getMetaStore("0x1234..");
+// get the MetaStore instance or EditorView instance
+const view = rainPlugin?.view;
+const metaStore = rainPlugin?.metaStore;
 ```
-<br>
-
-Alternativley you can instantiate the `RainlangExtension` object and use it directly as an extension:
-```typescript
-// import
-import { RainlangExtension } from "codemirror-rainlang";
-
-// instantiate the rainlang extension, store it for updating op meta easily in future
-// `config` can be used to select specific language services to include/exclude
-// this object can be used directly as an extension
-const rainlangExt = new RainlangExtension(config)
-
-// to get the MetaStore instance to intract with it manually:
-rainlangExt.updateOpMeta(newOpMeta);
-```
-<br>
