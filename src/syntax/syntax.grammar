@@ -1,5 +1,5 @@
 
-@top Program { FrontMatter? FrontMatterSplitter? (expression | Import | Binding)* }
+@top Program { FrontMatter? FrontMatterSplitter? (expression | Import | (Binding | elidedBinding))* }
 
 @skip { space | BlockComment }
 
@@ -28,13 +28,20 @@ OpcodeOpening {
     blockCommentNewline { "\n" | "\r" | "\r\n" }
     @else blockCommentContent
 }
+@skip {} {
+    BlockComment { "/*" (blockCommentContent | blockCommentNewline)* blockCommentEnd }
+}
+
+elidedBinding {
+    Binding ElisionMsg 
+}
 
 @external tokens frontMatter from "./tokens" {
     FrontMatter
 }
 
-@skip {} {
-    BlockComment { "/*" (blockCommentContent | blockCommentNewline)* blockCommentEnd }
+@external tokens elisionMsg from "./tokens" {
+    ElisionMsg
 }
 
 @tokens {

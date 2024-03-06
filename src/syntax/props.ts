@@ -22,6 +22,7 @@ export const highlight = styleTags({
     StringLiteral: tags.string,
     SubParser: tags.string,
     Pragma: tags.unit,
+    ElisionMsg: tags.deleted,
 });
 
 export const indent = indentNodeProp.add({
