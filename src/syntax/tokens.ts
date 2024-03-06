@@ -23,7 +23,6 @@ export const elisionMsg = new ExternalTokenizer((input, _stack) => {
     // 42 = *
     while (input.next >= 0 ) {
         if (input.next == 33) {
-            let cm = false;
             while (
                 input.next >= 0 
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -31,16 +30,11 @@ export const elisionMsg = new ExternalTokenizer((input, _stack) => {
                 && input.next != 35 
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
-                && (cm = !(input.next == 47 && input.peek(1) == 42))) 
-            {
+                && !(input.next == 47 && input.peek(1) == 42)
+            ) {
                 input.advance();
             }
-            input.acceptToken(
-                ElisionMsg, 
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                input.next == -1 ? undefined : input.next == 35 || cm ? -1 : undefined
-            );
+            input.acceptToken(ElisionMsg);
             break;
         }
         input.advance();
