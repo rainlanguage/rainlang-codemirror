@@ -23,7 +23,7 @@ export const elisionMsg = new ExternalTokenizer((input, _stack) => {
         if (input.next == 33) {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
-            while (input.next >= 0 && input.next != 35 && input.next != 47 && input.peek(1) != 42) {
+            while(input.next >= 0 && input.next != 35 && (input.next != 47 && input.peek(1) != 42)){
                 input.advance();
             }
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
