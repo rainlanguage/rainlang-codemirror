@@ -17,7 +17,8 @@ export const RainlangLR = LRLanguage.define({
         )
     }),
     languageData: {
-        closeBrackets: {brackets: ["(", "<", "["]},
-        commentTokens: {block: {open: "/*", close: "*/"}}
+        closeBrackets: {brackets: ["(", "<", "[", "/*"]},
+        commentTokens: {block: {open: "/*", close: "*/"}},
+        wordChars: "-"
     }
 });
