@@ -18,20 +18,9 @@ export const frontMatter = new ExternalTokenizer((input, _stack) => {
 });
 
 export const elisionMsg = new ExternalTokenizer((input, _stack) => {
-    // 33 = !
-    // 47 = /
-    // 42 = *
-    while (input.next >= 0 ) {
+    while (check(input)) {
         if (input.next == 33) {
-            while (
-                input.next >= 0 
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                && input.next != 35 
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                && !(input.next == 47 && input.peek(1) == 42)
-            ) {
+            while (check(input)) {
                 input.advance();
             }
             input.acceptToken(ElisionMsg);
@@ -40,3 +29,15 @@ export const elisionMsg = new ExternalTokenizer((input, _stack) => {
         input.advance();
     }
 });
+
+function check(input: any) {
+    // 33 = !
+    // 47 = /
+    // 42 = *
+    // 35 = #
+    // 64 = @
+    return input.next >= 0 
+        && input.next != 35 
+        && input.next != 64 
+        && !(input.next == 47 && input.peek(1) == 42);
+}
