@@ -50,7 +50,7 @@ elidedBinding {
 
     Binding { "#" ![^ \t\n\r()<>:,;]* }
 
-    Import { "@" $[ \t\n\r]* ((word) space)? "0x" $[a-fA-F0-9]+ }
+    Import { "@" space* (word space+)? ("0x" $[a-fA-F0-9]+)? }
 
     Placeholder { "_" }
 
