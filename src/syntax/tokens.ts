@@ -1,5 +1,5 @@
 import { ExternalTokenizer } from "@lezer/lr";
-import { FrontMatter } from "./parser.terms.js";
+import { FrontMatter, ElisionMsg } from "./parser.terms.js";
 
 export const frontMatter = new ExternalTokenizer((input, _stack) => {
     // 45 = -
@@ -16,3 +16,28 @@ export const frontMatter = new ExternalTokenizer((input, _stack) => {
         input.advance();
     }
 });
+
+export const elisionMsg = new ExternalTokenizer((input, _stack) => {
+    while (check(input)) {
+        if (input.next == 33) {
+            while (check(input)) {
+                input.advance();
+            }
+            input.acceptToken(ElisionMsg);
+            break;
+        }
+        input.advance();
+    }
+});
+
+function check(input: any) {
+    // 33 = !
+    // 47 = /
+    // 42 = *
+    // 35 = #
+    // 64 = @
+    return input.next >= 0 
+        && input.next != 35 
+        && input.next != 64 
+        && !(input.next == 47 && input.peek(1) == 42);
+}
