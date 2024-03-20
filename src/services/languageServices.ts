@@ -362,30 +362,7 @@ export function getCompletion(
             } = {
                 label,
                 detail,
-                apply: (view, _comp) => {
-                    // re adjusting the cursor position for opcodes
-                    const matcher = prefixMatch([_comp]);
-                    const match = context.matchBefore(matcher[1])!;
-                    if (insertText) {
-                        let cursorPos = match.from + insertText.length;
-                        if (insertText.includes("<>")) cursorPos -= 2;
-                        view.dispatch({
-                            changes: { 
-                                from: match.from, 
-                                to: match.to, 
-                                insert: insertText 
-                            },
-                            selection: { anchor: cursorPos, head: cursorPos }
-                        });
-                    }
-                    else view.dispatch({
-                        changes: { 
-                            from: match.from, 
-                            to: match.to, 
-                            insert: label 
-                        }
-                    });
-                },
+                apply: insertText ? insertText : label,
                 type: kind && CompletionItemKindMap[kind].toLowerCase(),
                 sortText: sortText ?? label,
                 filterText: filterText ?? label,
