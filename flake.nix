@@ -54,12 +54,13 @@
       # For `nix develop`:
       devShell = pkgs.mkShell {
         nativeBuildInputs = [
-          rainix.rust-toolchain.${system}
-          rainix.rust-build-inputs.${system}
+          # rainix.rust-toolchain.${system}
+          # rainix.rust-build-inputs.${system}
           rainix.node-build-inputs.${system}
-        ] ++ (with pkgs; [ 
-          wasm-bindgen-cli
-        ]);
+        ];
+        # ++ (with pkgs; [ 
+        #   wasm-bindgen-cli
+        # ]);
       };
     }
   );
