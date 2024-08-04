@@ -21,10 +21,10 @@ jobs:
           cache: 'npm'
 
       - name: Install
-        run:  nix run .#install
+        run:  nix develop -c npm install
 
       - name: Build
-        run:  nix run .#build
+        run:  nix develop -c npm build
 
       - name: Git Config
         run: |
@@ -51,22 +51,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Create zip and tar built package archives for GH release
-      - name: Create Built Package Archives
-        run: | 
-          zip -r rainlang-codemirror-${{ env.NEW_VERSION }}.zip dist src README.md package.json
-          tar -czvf rainlang-codemirror-${{ env.NEW_VERSION }}.tar.gz dist src README.md package.json
+      # Create npm package tarball to put in release files
+      - name: Create NPM Package Tarball
+        run: echo "NPM_PACKAGE=$(nix develop -c npm pack --silent)" >> $GITHUB_ENV
 
-      # Create gitHub release with built package archives
+      - name: Rename NPM Package Tarball
+        run: mv ${{ env.NPM_PACKAGE }} rainlang-codemirror-npm-package-${{ env.NEW_VERSION }}.tgz
+
+      # Create gitHub release with npm tarball
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.NEW_VERSION }}
           name: Release ${{ env.NEW_VERSION }}
-          # specify the additional built packages to be included in GH release
-          files: |
-            rainlang-codemirror-${{ env.NEW_VERSION }}.zip
-            rainlang-codemirror-${{ env.NEW_VERSION }}.tar.gz
+          files: rainlang-codemirror-npm-package-${{ env.NEW_VERSION }}.tgz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
