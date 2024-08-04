@@ -17,10 +17,10 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@v2
 
       - name: Install
-        run:  nix run .#install
+        run:  nix develop -c npm install
 
       - name: Build
-        run:  nix run .#build
+        run:  nix develop -c npm run build
       
       - name: Run Tests
-        run:  nix run .#test
+        run:  nix develop -c npm test

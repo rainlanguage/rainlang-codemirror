@@ -1,6 +1,16 @@
 name: Manual NPM Release
-on: [workflow_dispatch]
 permissions: write-all
+on:
+  workflow_dispatch:
+    inputs:
+      version-level:
+        description: 'Select Version Level'
+        required: true
+        type: choice
+        options:
+          - patch # Increase the patch version (x.y.z)
+          - minor # Increase the minor version (x.y.0)
+          - major # Increase the major version (x.0.0)
 
 jobs:
   release:
@@ -14,26 +24,26 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@v4
       - uses: DeterminateSystems/magic-nix-cache-action@v2
 
-      - name: Install NodeJS v21
+      - name: Install NodeJS v22
         uses: actions/setup-node@v4
         with:
-          node-version: 21
+          node-version: 22
           cache: 'npm'
 
       - name: Install
-        run:  nix run .#install
+        run:  nix develop -c npm install
 
       - name: Build
-        run:  nix run .#build
+        run:  nix develop -c npm build
 
       - name: Git Config
         run: |
           git config --global user.email "${{ secrets.CI_GIT_EMAIL }}"
           git config --global user.name "${{ secrets.CI_GIT_USER }}"
 
-      # bump version
-      - name: Bump Patch Version
-        run: echo "NEW_VERSION=$(npm version patch --no-git-tag-version)" >> $GITHUB_ENV
+      # set version
+      - name: Set Version
+        run: echo "NEW_VERSION=$(npm version ${{ inputs.version-level }} --no-git-tag-version)" >> $GITHUB_ENV
 
       # Commit changes and tag
       - name: Commit And Tag
@@ -51,25 +61,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Create zip and tar built package archives for GH release
-      - name: Create Built Package Archives
-        run: | 
-          zip -r rainlang-codemirror-${{ env.NEW_VERSION }}.zip dist src README.md package.json
-          tar -czvf rainlang-codemirror-${{ env.NEW_VERSION }}.tar.gz dist src README.md package.json
+      # Create npm package tarball to put in release files
+      - name: Create NPM Package Tarball
+        run: echo "NPM_PACKAGE=$(nix develop -c npm pack --silent)" >> $GITHUB_ENV
 
-      # Create gitHub release with built package archives
+      # rename npm package
+      - name: Rename NPM Package Tarball
+        run: mv ${{ env.NPM_PACKAGE }} rainlang-codemirror-npm-package-${{ env.NEW_VERSION }}.tgz
+
+      # Create gitHub release with npm tarball
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.NEW_VERSION }}
           name: Release ${{ env.NEW_VERSION }}
-          # specify the additional built packages to be included in GH release
-          files: |
-            rainlang-codemirror-${{ env.NEW_VERSION }}.zip
-            rainlang-codemirror-${{ env.NEW_VERSION }}.tar.gz
+          files: rainlang-codemirror-npm-package-${{ env.NEW_VERSION }}.tgz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # publish to npm
       - name: Publish To NPM
         uses: JS-DevTools/npm-publish@v1
         with:
