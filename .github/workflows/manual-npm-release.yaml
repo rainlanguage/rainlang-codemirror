@@ -34,7 +34,7 @@ jobs:
         run:  nix develop -c npm install
 
       - name: Build
-        run:  nix develop -c npm build
+        run:  nix develop -c npm run build
 
       - name: Git Config
         run: |
