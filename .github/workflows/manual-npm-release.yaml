@@ -18,9 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Pushes to the protected default branch go through this deploy key, which the
-          # "rain-marvin review" ruleset lets bypass; the Actions token cannot.
-          ssh-key: ${{ secrets.PUBLISH_PRIVATE_KEY }}
           fetch-depth: 0
           submodules: recursive
 
